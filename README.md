@@ -4,14 +4,13 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 
 ## App Info:
 
-* Team Name: TODO
-* App Name: TODO
+* Team Name: http-200
+* App Name: 
 * App Link: <https://TODO.com/>
 
 ### Students
-
-* First Last, x500@umn.edu
-* ...
+* Leon Chen, chen9861@umn.edu
+* Chunlin Gong, 
 
 
 ## Key Features
