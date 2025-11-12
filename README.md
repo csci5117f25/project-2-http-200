@@ -10,7 +10,7 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 
 ### Students
 * Leon Chen, chen9861@umn.edu
-* Chunlin Gong, 
+* Chunlin Gong, gong0226@umn.edu
 
 
 ## Key Features
@@ -34,7 +34,33 @@ Which (if any) progressive web app feature(s) does your app support?
 
 **[Add images/photos that show your mockup](https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository) along with a very brief caption:**
 
-![](https://media.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif)
+### Overall Design Mockup
+<img src="Mock-ups/Mockup.png" alt="Overall Mockup" width="800"/>
+*Complete PhD application management system design overview, integrating all application components and information aggregation features*
+
+### Home Page
+<img src="Mock-ups/HomePage.png" alt="Home Page" width="800"/>
+*Dashboard showing application overview, pending tasks, and quick access to all PhD application management features*
+
+### Statement of Purpose (SOP)
+<img src="Mock-ups/SOP.png" alt="SOP" width="800"/>
+*SOP management interface for creating, editing, and organizing multiple versions of personal statements for different PhD programs*
+
+### Recommendation Letter
+<img src="Mock-ups/Recommendation Letter.png" alt="Recommendation Letter" width="800"/>
+*Recommendation letter tracker for managing requests, tracking submission status, and organizing letters by program and recommender*
+
+### Program Information
+<img src="Mock-ups/Program_info.png" alt="Program Info" width="800"/>
+*PhD program information aggregator displaying detailed program requirements, deadlines, faculty research areas, and application checklist*
+
+### AI Assisted Features
+<img src="Mock-ups/AI Assisted.png" alt="AI Assisted" width="800"/>
+*AI-powered writing assistant for generating, refining, and optimizing SOP drafts, recommendation letter requests, and other application materials*
+
+### Activity Log
+<img src="Mock-ups/Log.png" alt="Log" width="800"/>
+*Application timeline and activity log tracking all PhD application progress, deadlines, submissions, and important milestones*
 
 
 ## Testing Notes
