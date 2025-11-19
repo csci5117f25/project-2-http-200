@@ -1,31 +1,42 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { useAuth } from '../stores/auth'
 
 const router = useRouter()
+const auth = useAuth()
 
-const navItems = [
-  { label: 'Recommendation Letters', route: '/recommendation' },
-  { label: 'AI Assisted Search', route: '/ai-search' },
-  { label: 'Statement of Purpose', route: '/sop' }
+const tools = [
+  { label: 'Recommendation Letters System', route: '/recommendation', icon: '📧' },
+  { label: 'AI Assisted Search', route: '/ai-search', icon: '🤖' },
+  { label: 'Statement of Purpose', route: '/sop', icon: '📝' }
 ]
+
+const getInitial = () => {
+  return auth.user?.email?.[0]?.toUpperCase() || 'U'
+}
 </script>
 
 <template>
   <aside class="sidebar">
-    <div class="header">
-      <div class="logo" @click="router.push('/home')">
-        <span>PhD App Hub</span>
+    <div class="top">
+      <div class="brand" @click="router.push('/home')">
+        <div class="logo">PhD</div>
+        <span class="title">App Hub</span>
+      </div>
+      <div class="avatar">
+        <div class="circle">{{ getInitial() }}</div>
       </div>
     </div>
     
-    <nav>
+    <nav class="tools">
       <div 
-        v-for="item in navItems" 
-        :key="item.route"
-        class="nav-item"
-        @click="router.push(item.route)"
+        v-for="tool in tools" 
+        :key="tool.route"
+        class="tool-card"
+        @click="router.push(tool.route)"
       >
-        {{ item.label }}
+        <div class="icon">{{ tool.icon }}</div>
+        <div class="label">{{ tool.label }}</div>
       </div>
     </nav>
   </aside>
@@ -33,41 +44,107 @@ const navItems = [
 
 <style scoped>
 .sidebar {
-  width: 280px;
+  width: 300px;
   background: white;
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
 }
 
-.header {
-  padding: 24px;
+.top {
+  padding: 28px 24px;
   border-bottom: 1px solid var(--border);
 }
 
-.logo {
-  font-size: 20px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-nav {
-  padding: 20px;
+.brand {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.nav-item {
-  padding: 16px;
-  background: var(--light-bg);
-  border-radius: 8px;
+  align-items: center;
+  gap: 14px;
   cursor: pointer;
-  font-size: 14px;
+  margin-bottom: 20px;
 }
 
-.nav-item:hover {
+.logo {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--coral), #ff8e6e);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.avatar {
+  display: flex;
+}
+
+.circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
   background: var(--coral);
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 17px;
+}
+
+.tools {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tool-card {
+  padding: 20px 18px;
+  background: var(--light-bg);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.tool-card:hover {
+  background: var(--coral);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(255, 107, 107, 0.2);
+}
+
+.tool-card:hover .icon {
+  transform: scale(1.1);
+}
+
+.tool-card:hover .label {
+  color: white;
+}
+
+.icon {
+  font-size: 34px;
+  transition: transform 0.25s;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark);
+  transition: color 0.25s;
+  line-height: 1.4;
 }
 </style>
