@@ -17,3 +17,5 @@ Learn more about the recommended Project Setup and IDE Support in the [Vue Docs 
 5. [Vue Props](https://vuejs.org/guide/components/props.html) 
 
 6. [Vue Conditional Rendering](https://vuejs.org/guide/essentials/conditional.html) - Used `v-if` and `v-else` for modal display and expanded card states.
+
+7. [CSRankings](http://csrankings.org/) - Professor and institution data source for real-world academic information.

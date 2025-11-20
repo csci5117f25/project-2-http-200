@@ -1,49 +1,41 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useProjects } from '../stores/projects'
+import { searchSchools, searchProfs, type Professor } from '../utils/data'
 
+interface Props {
+  editData?: any
+}
+
+const props = defineProps<Props>()
 const emit = defineEmits(['close'])
 const projects = useProjects()
 
-const schools = [
-  { name: 'Harvard University', stipend: '$38,000', rank: '#3' },
-  { name: 'Stanford University', stipend: '$45,000', rank: '#1' },
-  { name: 'MIT', stipend: '$42,000', rank: '#2' },
-  { name: 'UC Berkeley', stipend: '$40,000', rank: '#4' }
-]
-
-const professors = [
-  { name: 'Smith', info: 'Machine Learning, Computer Vision' },
-  { name: 'Johnson', info: 'Natural Language Processing' },
-  { name: 'Williams', info: 'Robotics, AI Systems' }
-]
-
 const schoolSearch = ref('')
 const profSearch = ref('')
-const selectedSchool = ref<any>(null)
-const selectedProf = ref<any>(null)
-const todos = ref([{ time: '', task: '', state: 'Pending', frequency: '' }])
+const selectedSchool = ref<string | null>(props.editData?.school || null)
+const selectedProf = ref<Professor | null>(
+  props.editData ? { 
+    name: props.editData.professor,
+    affiliation: props.editData.school,
+    homepage: props.editData.homepage || '',
+    scholarid: props.editData.scholarid || ''
+  } : null
+)
+const todos = ref(props.editData?.todos?.length ? [...props.editData.todos] : 
+  [{ time: '', task: '', state: 'Pending', frequency: '' }])
 
-const filteredSchools = computed(() => {
-  if (!schoolSearch.value) return []
-  return schools.filter(s => 
-    s.name.toLowerCase().includes(schoolSearch.value.toLowerCase())
-  )
-})
-
-const filteredProfs = computed(() => {
-  if (!profSearch.value || !selectedSchool.value) return []
-  return professors
-})
-
+const schoolResults = computed(() => searchSchools(schoolSearch.value))
+const profResults = computed(() => searchProfs(selectedSchool.value || '', profSearch.value))
 const profEnabled = computed(() => !!selectedSchool.value)
 
-const selectSchool = (school: any) => {
+const selectSchool = (school: string) => {
   selectedSchool.value = school
   schoolSearch.value = ''
+  selectedProf.value = null
 }
 
-const selectProf = (prof: any) => {
+const selectProf = (prof: Professor) => {
   selectedProf.value = prof
   profSearch.value = ''
 }
@@ -61,18 +53,22 @@ const removeTodo = (idx: number) => {
 const save = () => {
   if (!selectedSchool.value || !selectedProf.value) return
   
-  const newProject = {
-    id: Date.now().toString(),
-    school: selectedSchool.value.name,
+  const projectData = {
+    id: props.editData?.id || Date.now().toString(),
+    school: selectedSchool.value,
     program: 'Computer Science',
     professor: selectedProf.value.name,
-    stipend: selectedSchool.value.stipend,
-    rank: selectedSchool.value.rank,
-    profInfo: selectedProf.value.info,
+    homepage: selectedProf.value.homepage,
+    scholarid: selectedProf.value.scholarid,
     todos: todos.value.filter(t => t.task.trim())
   }
   
-  projects.add(newProject)
+  if (props.editData) {
+    projects.update(props.editData.id, projectData)
+  } else {
+    projects.add(projectData)
+  }
+  
   localStorage.setItem('projects', JSON.stringify(projects.projects))
   emit('close')
 }
@@ -82,7 +78,7 @@ const save = () => {
   <div class="overlay" @click.self="emit('close')">
     <div class="modal">
       <div class="header">
-        <h2>Create New Project</h2>
+        <h2>{{ editData ? 'Edit Project' : 'Create New Project' }}</h2>
         <button class="close" @click="emit('close')">×</button>
       </div>
       
@@ -96,24 +92,22 @@ const save = () => {
                 placeholder="Search school..."
                 class="input"
               />
-              <div v-if="filteredSchools.length" class="dropdown">
+              <div v-if="schoolResults.length" class="dropdown">
                 <div 
-                  v-for="s in filteredSchools"
-                  :key="s.name"
+                  v-for="s in schoolResults"
+                  :key="s"
                   class="option"
                   @click="selectSchool(s)"
                 >
-                  <div class="opt-name">{{ s.name }}</div>
-                  <div class="opt-meta">{{ s.stipend }} · {{ s.rank }}</div>
+                  <div class="opt-name">{{ s }}</div>
                 </div>
               </div>
             </div>
             <div v-else class="selected">
               <div class="sel-info">
-                <div class="sel-name">{{ selectedSchool.name }}</div>
-                <div class="sel-meta">{{ selectedSchool.stipend }} · {{ selectedSchool.rank }}</div>
+                <div class="sel-name">{{ selectedSchool }}</div>
               </div>
-              <button class="clear" @click="selectedSchool = null">×</button>
+              <button class="clear" @click="selectedSchool = null; selectedProf = null">×</button>
             </div>
           </div>
           
@@ -126,9 +120,9 @@ const save = () => {
                 :disabled="!profEnabled"
                 class="input"
               />
-              <div v-if="filteredProfs.length" class="dropdown">
+              <div v-if="profResults.length" class="dropdown">
                 <div 
-                  v-for="p in filteredProfs"
+                  v-for="p in profResults"
                   :key="p.name"
                   class="option"
                   @click="selectProf(p)"
@@ -147,9 +141,12 @@ const save = () => {
         </div>
         
         <div class="field">
-          <label>Information about Prof</label>
+          <label>Professor Homepage</label>
           <div class="info-box">
-            {{ selectedProf ? selectedProf.info : 'Please find your future professor' }}
+            <a v-if="selectedProf?.homepage" :href="selectedProf.homepage" target="_blank">
+              {{ selectedProf.homepage }}
+            </a>
+            <span v-else class="placeholder">Select a professor to see their homepage</span>
           </div>
         </div>
         
@@ -189,7 +186,7 @@ const save = () => {
       
       <div class="footer">
         <button class="btn-cancel" @click="emit('close')">Cancel</button>
-        <button class="btn-save" @click="save">Save</button>
+        <button class="btn-save" @click="save">{{ editData ? 'Update' : 'Save' }}</button>
       </div>
     </div>
   </div>
@@ -296,7 +293,7 @@ const save = () => {
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-top: 4px;
-  max-height: 180px;
+  max-height: 200px;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   z-index: 10;
@@ -314,13 +311,7 @@ const save = () => {
 
 .opt-name {
   font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.opt-meta {
-  font-size: 12px;
-  color: var(--gray);
+  font-weight: 500;
 }
 
 .selected {
@@ -336,12 +327,6 @@ const save = () => {
 .sel-name {
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.sel-meta {
-  font-size: 12px;
-  color: var(--gray);
 }
 
 .clear {
@@ -366,8 +351,21 @@ const save = () => {
   background: var(--light-bg);
   border-radius: 8px;
   font-size: 14px;
-  color: var(--dark);
   min-height: 60px;
+}
+
+.info-box a {
+  color: var(--coral);
+  text-decoration: none;
+}
+
+.info-box a:hover {
+  text-decoration: underline;
+}
+
+.placeholder {
+  color: var(--gray);
+  font-style: italic;
 }
 
 .table {
@@ -474,4 +472,3 @@ const save = () => {
   background: #ff5252;
 }
 </style>
-

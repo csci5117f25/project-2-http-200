@@ -7,6 +7,7 @@ import CreateModal from '../components/CreateModal.vue'
 
 const projects = useProjects()
 const showModal = ref(false)
+const editing = ref<any>(null)
 
 onMounted(() => {
   const saved = localStorage.getItem('projects')
@@ -14,6 +15,16 @@ onMounted(() => {
     projects.projects = JSON.parse(saved)
   }
 })
+
+const openModal = (project?: any) => {
+  editing.value = project || null
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  editing.value = null
+}
 </script>
 
 <template>
@@ -25,9 +36,10 @@ onMounted(() => {
           v-for="project in projects.projects"
           :key="project.id"
           :data="project"
+          @edit="openModal"
         />
         
-        <div class="add-card" @click="showModal = true">
+        <div class="add-card" @click="openModal()">
           <div class="plus">+</div>
           <span>Create New Project</span>
         </div>
@@ -36,7 +48,8 @@ onMounted(() => {
     
     <CreateModal 
       v-if="showModal"
-      @close="showModal = false"
+      :editData="editing"
+      @close="closeModal"
     />
   </div>
 </template>
@@ -49,25 +62,25 @@ onMounted(() => {
 
 .main {
   flex: 3;
-  padding: 40px;
+  padding: 38px;
   overflow-y: auto;
 }
 
 .projects {
-  max-width: 1200px;
+  max-width: 1180px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 15px;
 }
 
 .add-card {
   border: 2px dashed var(--border);
   border-radius: 12px;
-  padding: 48px;
+  padding: 44px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   cursor: pointer;
   transition: all 0.2s;
   background: white;

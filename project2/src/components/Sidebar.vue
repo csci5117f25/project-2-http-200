@@ -52,16 +52,16 @@ const getInitial = () => {
 }
 
 .top {
-  padding: 28px 24px;
+  padding: 26px 22px;
   border-bottom: 1px solid var(--border);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 13px;
   cursor: pointer;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .logo {
@@ -102,23 +102,23 @@ const getInitial = () => {
 }
 
 .tools {
-  padding: 24px;
+  padding: 22px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 13px;
 }
 
 .tool-card {
-  padding: 20px 18px;
+  padding: 19px 17px;
   background: var(--light-bg);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.23s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 10px;
+  gap: 9px;
 }
 
 .tool-card:hover {

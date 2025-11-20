@@ -5,8 +5,7 @@ import { useAuth } from '../stores/auth'
 const router = useRouter()
 const auth = useAuth()
 
-const handleLogin = () => {
-  // TODO: Firebase auth
+const login = () => {
   auth.login({ email: 'user@example.com' })
   router.push('/home')
 }
@@ -16,7 +15,7 @@ const handleLogin = () => {
   <div class="container">
     <div class="box">
       <h1>PhD App Hub</h1>
-      <button @click="handleLogin">Sign in with Google</button>
+      <button @click="login">Sign in with Google</button>
     </div>
   </div>
 </template>
@@ -32,18 +31,18 @@ const handleLogin = () => {
 
 .box {
   background: white;
-  padding: 48px;
+  padding: 45px;
   border-radius: 12px;
   text-align: center;
 }
 
 h1 {
-  font-size: 32px;
-  margin-bottom: 32px;
+  font-size: 31px;
+  margin-bottom: 28px;
 }
 
 button {
-  padding: 12px 32px;
+  padding: 11px 30px;
   background: var(--coral);
   color: white;
   border: none;

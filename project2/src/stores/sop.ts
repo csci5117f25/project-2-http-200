@@ -10,7 +10,7 @@ export const useSOP = defineStore('sop', () => {
   }
   
   const load = () => {
-    // TODO: fetch from backend
+    
   }
   
   return { content, references, save, load }

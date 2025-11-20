@@ -5,6 +5,8 @@ const props = defineProps<{
   data: any
 }>()
 
+const emit = defineEmits(['edit'])
+
 const expanded = ref(false)
 </script>
 
@@ -21,24 +23,21 @@ const expanded = ref(false)
           </div>
         </div>
       </div>
-      <button class="toggle">{{ expanded ? '−' : '+' }}</button>
+      <div class="actions">
+        <button class="edit-btn" @click.stop="emit('edit', data)">✎</button>
+        <button class="toggle">{{ expanded ? '−' : '+' }}</button>
+      </div>
     </div>
     
     <div v-if="expanded" class="body">
-      <div class="details">
-        <div class="row">
-          <span class="key">Stipend:</span>
-          <span class="val">{{ data.stipend || 'N/A' }}</span>
-        </div>
-        <div class="row">
-          <span class="key">Rank:</span>
-          <span class="val">{{ data.rank || 'N/A' }}</span>
-        </div>
-      </div>
-      
       <div class="section">
-        <h4>About Professor</h4>
-        <p>{{ data.profInfo || 'No information available' }}</p>
+        <h4>Professor Information</h4>
+        <p v-if="data.homepage">
+          <a :href="data.homepage" target="_blank">{{ data.homepage }}</a>
+        </p>
+        <p v-if="data.scholarid && data.scholarid !== 'NOSCHOLARPAGE'" class="scholar">
+          Scholar ID: {{ data.scholarid }}
+        </p>
       </div>
       
       <div class="section">
@@ -136,6 +135,32 @@ const expanded = ref(false)
   color: var(--gray);
 }
 
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.edit-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--light-bg);
+  color: var(--dark);
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn:hover {
+  background: var(--coral);
+  color: white;
+}
+
 .toggle {
   width: 36px;
   height: 36px;
@@ -173,31 +198,6 @@ const expanded = ref(false)
   }
 }
 
-.details {
-  display: flex;
-  gap: 24px;
-  padding: 16px;
-  background: var(--light-bg);
-  border-radius: 8px;
-  margin-bottom: 16px;
-}
-
-.row {
-  display: flex;
-  gap: 8px;
-}
-
-.key {
-  color: var(--gray);
-  font-size: 14px;
-}
-
-.val {
-  color: var(--dark);
-  font-weight: 600;
-  font-size: 14px;
-}
-
 .section {
   margin-bottom: 16px;
 }
@@ -212,6 +212,21 @@ const expanded = ref(false)
   font-size: 14px;
   color: var(--gray);
   line-height: 1.6;
+}
+
+.section a {
+  color: var(--coral);
+  text-decoration: none;
+}
+
+.section a:hover {
+  text-decoration: underline;
+}
+
+.scholar {
+  font-size: 12px;
+  color: var(--gray);
+  margin-top: 4px;
 }
 
 .todos {
@@ -250,4 +265,3 @@ const expanded = ref(false)
   color: var(--gray);
 }
 </style>
-
