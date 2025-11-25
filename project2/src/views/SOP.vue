@@ -7,7 +7,6 @@ const sop = useSOP()
 
 <template>
   <div class="layout">
-    <Sidebar />
     <main>
       <div class="sop-container">
         <div class="reference">
@@ -18,12 +17,14 @@ const sop = useSOP()
         </div>
       </div>
     </main>
+    <Sidebar />
   </div>
 </template>
 
 <style scoped>
 .layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
 }
 

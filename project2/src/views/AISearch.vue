@@ -4,16 +4,17 @@ import Sidebar from '../components/Sidebar.vue'
 
 <template>
   <div class="layout">
-    <Sidebar />
     <main>
       <h1>AI Assisted Search</h1>
     </main>
+    <Sidebar />
   </div>
 </template>
 
 <style scoped>
 .layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
 }
 

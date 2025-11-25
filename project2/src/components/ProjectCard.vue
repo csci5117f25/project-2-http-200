@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useProjects } from '../stores/projects'
 
 const props = defineProps<{
   data: any
@@ -7,7 +8,43 @@ const props = defineProps<{
 
 const emit = defineEmits(['edit'])
 
+const projects = useProjects()
 const expanded = ref(false)
+const editingTodo = ref<number | null>(null)
+const newTodo = ref({ time: '', task: '', state: 'Pending', frequency: 'Medium' })
+
+const formatDateInput = (value: string) => {
+  const cleaned = value.replace(/\D/g, '')
+  if (cleaned.length <= 2) {
+    return cleaned
+  } else if (cleaned.length <= 4) {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`
+  } else {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`
+  }
+}
+
+const handleDateInput = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  newTodo.value.time = formatDateInput(target.value)
+}
+
+const updateTodoState = (index: number, newState: string) => {
+  if (!props.data.todos) return
+  const updatedTodos = [...props.data.todos]
+  updatedTodos[index] = { ...updatedTodos[index], state: newState }
+  projects.update(props.data.id, { ...props.data, todos: updatedTodos })
+  localStorage.setItem('projects', JSON.stringify(projects.projects))
+}
+
+const addNewTodo = () => {
+  if (!newTodo.value.task.trim()) return
+  const updatedTodos = [...(props.data.todos || [])]
+  updatedTodos.push({ ...newTodo.value })
+  projects.update(props.data.id, { ...props.data, todos: updatedTodos })
+  localStorage.setItem('projects', JSON.stringify(projects.projects))
+  newTodo.value = { time: '', task: '', state: 'Pending', frequency: 'Medium' }
+}
 </script>
 
 <template>
@@ -56,9 +93,45 @@ const expanded = ref(false)
           >
             <div>{{ todo.time }}</div>
             <div>{{ todo.task }}</div>
-            <div><span class="badge">{{ todo.state }}</span></div>
+            <div>
+              <select 
+                :value="todo.state" 
+                @change="updateTodoState(i, ($event.target as HTMLSelectElement).value)"
+                class="state-select"
+              >
+                <option>Pending</option>
+                <option>Processing</option>
+                <option>Finished</option>
+              </select>
+            </div>
             <div>{{ todo.frequency }}</div>
           </div>
+        </div>
+        <div class="add-todo">
+          <input 
+            :value="newTodo.time"
+            @input="handleDateInput"
+            type="text" 
+            class="todo-input todo-time"
+            placeholder="MM/DD/YYYY"
+            maxlength="10"
+          />
+          <input 
+            v-model="newTodo.task" 
+            class="todo-input"
+            placeholder="Task"
+          />
+          <select v-model="newTodo.state" class="todo-select">
+            <option>Pending</option>
+            <option>Processing</option>
+            <option>Finished</option>
+          </select>
+          <select v-model="newTodo.frequency" class="todo-select">
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
+          <button class="add-todo-btn" @click="addNewTodo">+</button>
         </div>
       </div>
     </div>
@@ -69,9 +142,10 @@ const expanded = ref(false)
 .card {
   background: white;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   transition: box-shadow 0.2s;
+  width: 100%;
 }
 
 .card:hover {
@@ -232,12 +306,12 @@ const expanded = ref(false)
 .todos {
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .todo-header {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr;
+  grid-template-columns: 120px minmax(200px, 1fr) 110px 110px;
   gap: 12px;
   padding: 12px 16px;
   background: var(--light-bg);
@@ -248,7 +322,7 @@ const expanded = ref(false)
 
 .todo-row {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr;
+  grid-template-columns: 120px minmax(200px, 1fr) 110px 110px;
   gap: 12px;
   padding: 12px 16px;
   border-top: 1px solid var(--border);
@@ -256,12 +330,74 @@ const expanded = ref(false)
   color: var(--dark);
 }
 
-.badge {
+.todo-row > div {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.state-select {
   padding: 4px 8px;
-  background: var(--light-bg);
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 11px;
   font-weight: 600;
-  color: var(--gray);
+  color: var(--dark);
+  background: white;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-todo {
+  display: grid;
+  grid-template-columns: 120px minmax(200px, 1fr) 110px 110px 45px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.todo-input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.todo-time {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.todo-select {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-todo-btn {
+  width: 40px;
+  height: 32px;
+  border: none;
+  background: var(--coral);
+  color: white;
+  border-radius: 4px;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.add-todo-btn:hover {
+  background: #ff5252;
 }
 </style>

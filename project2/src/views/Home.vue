@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useProjects } from '../stores/projects'
+import { useAuth } from '../stores/auth'
 import Sidebar from '../components/Sidebar.vue'
 import ProjectCard from '../components/ProjectCard.vue'
 import CreateModal from '../components/CreateModal.vue'
 
+const router = useRouter()
 const projects = useProjects()
+const auth = useAuth()
 const showModal = ref(false)
 const editing = ref<any>(null)
 
@@ -25,11 +29,24 @@ const closeModal = () => {
   showModal.value = false
   editing.value = null
 }
+
+const getInitial = () => {
+  return auth.user?.email?.[0]?.toUpperCase() || 'U'
+}
 </script>
 
 <template>
   <div class="layout">
-    <Sidebar />
+    <header class="header">
+      <div class="brand" @click="router.push('/home')">
+        <div class="logo">PhD</div>
+        <span class="title">App Hub</span>
+      </div>
+      <div class="avatar">
+        <div class="circle">{{ getInitial() }}</div>
+      </div>
+    </header>
+    
     <main class="main">
       <div class="projects">
         <ProjectCard 
@@ -46,6 +63,8 @@ const closeModal = () => {
       </div>
     </main>
     
+    <Sidebar />
+    
     <CreateModal 
       v-if="showModal"
       :editData="editing"
@@ -57,20 +76,77 @@ const closeModal = () => {
 <style scoped>
 .layout {
   display: flex;
+  flex-direction: column;
   height: 100vh;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 38px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  cursor: pointer;
+}
+
+.logo {
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, var(--coral), #ff8e6e);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.5px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.avatar {
+  display: flex;
+}
+
+.circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--coral);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 17px;
+}
+
 .main {
-  flex: 3;
+  flex: 1;
   padding: 38px;
   overflow-y: auto;
+  display: flex;
+  justify-content: center;
 }
 
 .projects {
-  max-width: 1180px;
+  max-width: 1400px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 8px;
 }
 
 .add-card {
@@ -84,6 +160,8 @@ const closeModal = () => {
   cursor: pointer;
   transition: all 0.2s;
   background: white;
+  min-height: 200px;
+  justify-content: center;
 }
 
 .add-card:hover {

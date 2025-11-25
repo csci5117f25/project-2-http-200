@@ -23,7 +23,7 @@ const selectedProf = ref<Professor | null>(
   } : null
 )
 const todos = ref(props.editData?.todos?.length ? [...props.editData.todos] : 
-  [{ time: '', task: '', state: 'Pending', frequency: '' }])
+  [{ time: '', task: '', state: 'Pending', frequency: 'Medium' }])
 
 const schoolResults = computed(() => searchSchools(schoolSearch.value))
 const profResults = computed(() => searchProfs(selectedSchool.value || '', profSearch.value))
@@ -40,8 +40,25 @@ const selectProf = (prof: Professor) => {
   profSearch.value = ''
 }
 
+const formatDateInput = (value: string) => {
+  const cleaned = value.replace(/\D/g, '')
+  if (cleaned.length <= 2) {
+    return cleaned
+  } else if (cleaned.length <= 4) {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`
+  } else {
+    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`
+  }
+}
+
+const handleDateInput = (index: number, event: Event) => {
+  const target = event.target as HTMLInputElement
+  const formatted = formatDateInput(target.value)
+  todos.value[index].time = formatted
+}
+
 const addTodo = () => {
-  todos.value.push({ time: '', task: '', state: 'Pending', frequency: '' })
+  todos.value.push({ time: '', task: '', state: 'Pending', frequency: 'Medium' })
 }
 
 const removeTodo = (idx: number) => {
@@ -165,14 +182,25 @@ const save = () => {
               :key="i"
               class="table-row"
             >
-              <input v-model="todo.time" placeholder="Date" class="cell-input" />
+              <input 
+                :value="todo.time"
+                @input="handleDateInput(i, $event)"
+                type="text" 
+                placeholder="MM/DD/YYYY" 
+                class="cell-input"
+                maxlength="10"
+              />
               <input v-model="todo.task" placeholder="Task" class="cell-input" />
               <select v-model="todo.state" class="cell-input">
                 <option>Pending</option>
                 <option>Processing</option>
                 <option>Finished</option>
               </select>
-              <input v-model="todo.frequency" placeholder="Frequency" class="cell-input" />
+              <select v-model="todo.frequency" class="cell-input">
+                <option>High</option>
+                <option>Medium</option>
+                <option>Low</option>
+              </select>
               <button 
                 class="remove"
                 @click="removeTodo(i)"
@@ -376,7 +404,7 @@ const save = () => {
 
 .table-header {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr 40px;
+  grid-template-columns: 100px 1fr 100px 100px 40px;
   gap: 8px;
   padding: 10px 12px;
   background: var(--light-bg);
@@ -386,7 +414,7 @@ const save = () => {
 
 .table-row {
   display: grid;
-  grid-template-columns: 1fr 2fr 1fr 1fr 40px;
+  grid-template-columns: 100px 1fr 100px 100px 40px;
   gap: 8px;
   padding: 8px 12px;
   border-top: 1px solid var(--border);
@@ -397,6 +425,8 @@ const save = () => {
   border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 13px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .remove {

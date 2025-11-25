@@ -1,33 +1,18 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { useAuth } from '../stores/auth'
 
 const router = useRouter()
-const auth = useAuth()
 
 const tools = [
-  { label: 'Recommendation Letters System', route: '/recommendation', icon: '📧' },
+  { label: 'Program', route: '/home', icon: '📋' },
   { label: 'AI Assisted Search', route: '/ai-search', icon: '🤖' },
-  { label: 'Statement of Purpose', route: '/sop', icon: '📝' }
+  { label: 'Statement of Purpose', route: '/sop', icon: '📝' },
+  { label: 'Recommendation Letters System', route: '/recommendation', icon: '📧' }
 ]
-
-const getInitial = () => {
-  return auth.user?.email?.[0]?.toUpperCase() || 'U'
-}
 </script>
 
 <template>
   <aside class="sidebar">
-    <div class="top">
-      <div class="brand" @click="router.push('/home')">
-        <div class="logo">PhD</div>
-        <span class="title">App Hub</span>
-      </div>
-      <div class="avatar">
-        <div class="circle">{{ getInitial() }}</div>
-      </div>
-    </div>
-    
     <nav class="tools">
       <div 
         v-for="tool in tools" 
@@ -44,68 +29,22 @@ const getInitial = () => {
 
 <style scoped>
 .sidebar {
-  width: 300px;
+  width: 100%;
   background: white;
-  border-right: 1px solid var(--border);
+  border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-}
-
-.top {
-  padding: 26px 22px;
-  border-bottom: 1px solid var(--border);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-  cursor: pointer;
-  margin-bottom: 18px;
-}
-
-.logo {
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(135deg, var(--coral), #ff8e6e);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: -0.5px;
-}
-
-.title {
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--dark);
-}
-
-.avatar {
-  display: flex;
-}
-
-.circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: var(--coral);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 17px;
 }
 
 .tools {
   padding: 22px;
   display: flex;
-  flex-direction: column;
-  gap: 13px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .tool-card {
@@ -119,6 +58,8 @@ const getInitial = () => {
   align-items: center;
   text-align: center;
   gap: 9px;
+  flex: 1;
+  max-width: 200px;
 }
 
 .tool-card:hover {
