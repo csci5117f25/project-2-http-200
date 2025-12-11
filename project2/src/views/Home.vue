@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjects } from '../stores/projects'
 import { useAuth } from '../stores/auth'
@@ -13,10 +13,16 @@ const auth = useAuth()
 const showModal = ref(false)
 const editing = ref<any>(null)
 
+// Wait for auth to load before initializing projects
+watch(() => auth.loading, (isLoading) => {
+  if (!isLoading && auth.user) {
+    projects.init()
+  }
+}, { immediate: true })
+
 onMounted(() => {
-  const saved = localStorage.getItem('projects')
-  if (saved) {
-    projects.projects = JSON.parse(saved)
+  if (!auth.loading && auth.user) {
+    projects.init()
   }
 })
 

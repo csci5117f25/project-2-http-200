@@ -67,11 +67,10 @@ const removeTodo = (idx: number) => {
   }
 }
 
-const save = () => {
+const save = async () => {
   if (!selectedSchool.value || !selectedProf.value) return
   
   const projectData = {
-    id: props.editData?.id || Date.now().toString(),
     school: selectedSchool.value,
     program: 'Computer Science',
     professor: selectedProf.value.name,
@@ -80,14 +79,17 @@ const save = () => {
     todos: todos.value.filter(t => t.task.trim())
   }
   
-  if (props.editData) {
-    projects.update(props.editData.id, projectData)
-  } else {
-    projects.add(projectData)
+  try {
+    if (props.editData?.id) {
+      await projects.update(props.editData.id, projectData)
+    } else {
+      await projects.add(projectData)
+    }
+    emit('close')
+  } catch (error) {
+    console.error('Failed to save project:', error)
+    alert('Failed to save project. Please try again.')
   }
-  
-  localStorage.setItem('projects', JSON.stringify(projects.projects))
-  emit('close')
 }
 </script>
 

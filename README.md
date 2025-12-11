@@ -124,7 +124,7 @@ Left the structure as-is since this part was already clear
 ***
 
 **Q3:** The Statement of Purpose (SOP) section is completely unclear — how is the user supposed to interact with it?  
-**A3:** Users can select SOPs they want to see using filters, and then the right side is an editing block that su
+**A3:** Users can select SOPs they want to see using filters, and then the right side is an editing block that supports editing and comparing different versions.
 
 ***
 
