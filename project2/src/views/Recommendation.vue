@@ -12,6 +12,12 @@ import Sidebar from '../components/Sidebar.vue'
 import AddRecommenderModal from '../components/AddRecommenderModal.vue'
 import AssignSchoolsModal from '../components/AssignSchoolsModal.vue'
 import type { Recommender } from '../stores/recommenders'
+import Card from '../components/ui/card.vue'
+import CardHeader from '../components/ui/card-header.vue'
+import CardTitle from '../components/ui/card-title.vue'
+import CardContent from '../components/ui/card-content.vue'
+import Button from '../components/ui/button.vue'
+import Badge from '../components/ui/badge.vue'
 
 const router = useRouter()
 const auth = useAuth()
@@ -252,117 +258,132 @@ const sendInvitationEmails = async (recommender: Recommender) => {
 </script>
 
 <template>
-  <div class="layout">
-    <main class="main">
-      <div class="header-section">
-        <h1>Recommendation Letters</h1>
-        <button class="btn-add-professor" @click="showAddRecommenderModal = true">
-          + Add Professor
-        </button>
-      </div>
-      
-      <div v-if="recommenders.recommenders.length === 0" class="empty-state">
-        <p>No professors added yet. Click "Add Professor" to get started.</p>
-      </div>
-      
-      <div v-else class="recommenders-grid">
-        <div 
-          v-for="recommender in recommenders.recommenders" 
-          :key="recommender.id"
-          class="recommender-card"
-        >
-          <div class="card-header">
-            <div class="professor-info">
-              <h3>{{ recommender.name }}</h3>
-              <p class="email">{{ recommender.email }}</p>
-              <p v-if="recommender.affiliation" class="affiliation">{{ recommender.affiliation }}</p>
-            </div>
-            <div class="card-actions">
-              <button 
-                class="btn-edit"
-                @click="openEditModal(recommender)"
-                title="Edit Professor"
-              >
-                ✏️ Edit
-              </button>
-              <button 
-                class="btn-delete"
-                @click="deleteRecommender(recommender)"
-                title="Delete Professor"
-              >
-                🗑️ Delete
-              </button>
-              <button 
-                class="btn-send-invite"
-                @click="sendInvitationEmails(recommender)"
-                :disabled="sendingEmails"
-              >
-                {{ sendingEmails ? 'Sending...' : 'Send Invitation' }}
-              </button>
-            </div>
+  <div class="flex h-screen bg-background overflow-hidden">
+    <Sidebar />
+    <main class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out">
+      <div class="p-6">
+        <div class="max-w-7xl mx-auto space-y-6">
+          <div class="flex items-center justify-between mb-6">
+            <h1 class="text-3xl font-bold">Recommendation Letters</h1>
+            <Button @click="showAddRecommenderModal = true">
+              + Add Professor
+            </Button>
           </div>
           
-          <div class="schools-section">
-            <h4>Schools</h4>
-            <div v-if="lorTasks.getTasksByRecommender(recommender.id!).length === 0" class="no-schools">
-              <p>No schools assigned yet.</p>
-            </div>
-            <div v-else class="schools-table">
-              <table class="schools-table-content">
-                <thead>
-                  <tr>
-                    <th>University</th>
-                    <th>Official App Portal</th>
-                    <th>Due</th>
-                    <th>State</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr 
-                    v-for="task in lorTasks.getTasksByRecommender(recommender.id!)"
-                    :key="task.id"
-                  >
-                    <td class="university-cell">
-                      <div class="university-name">{{ getTaskDetails(task)?.schoolName || 'Unknown School' }}</div>
-                      <div class="program-name">{{ getTaskDetails(task)?.programName || '' }}</div>
-                    </td>
-                    <td class="portal-cell">
-                      <a 
-                        v-if="getTaskDetails(task)?.portalUrl" 
-                        :href="getTaskDetails(task)!.portalUrl" 
-                        target="_blank"
-                        class="portal-link"
-                      >
-                        {{ getTaskDetails(task)!.portalUrl }}
-                      </a>
-                      <span v-else class="no-portal">-</span>
-                    </td>
-                    <td class="due-cell">
-                      {{ formatDate(getTaskDetails(task)?.lorDeadline) }}
-                    </td>
-                    <td class="state-cell">
-                      <div class="state-container">
-                        <div 
-                          class="state-indicator" 
-                          :style="{ backgroundColor: getStatusColor(task.status) }"
-                          :title="task.status.replace('_', ' ').toUpperCase()"
+          <div v-if="recommenders.recommenders.length === 0" class="text-center py-12">
+            <p class="text-muted-foreground">No professors added yet. Click "Add Professor" to get started.</p>
+          </div>
+          
+          <div v-else class="space-y-4">
+            <Card
+              v-for="recommender in recommenders.recommenders" 
+              :key="recommender.id"
+              class="overflow-hidden"
+            >
+              <CardHeader>
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <CardTitle class="mb-2">{{ recommender.name }}</CardTitle>
+                    <p class="text-sm text-muted-foreground mb-1">{{ recommender.email }}</p>
+                    <p v-if="recommender.affiliation" class="text-sm text-muted-foreground">
+                      {{ recommender.affiliation }}
+                    </p>
+                  </div>
+                  <div class="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      @click="openEditModal(recommender)"
+                    >
+                      ✏️ Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      @click="deleteRecommender(recommender)"
+                    >
+                      🗑️ Delete
+                    </Button>
+                    <Button
+                      size="sm"
+                      @click="sendInvitationEmails(recommender)"
+                      :disabled="sendingEmails"
+                    >
+                      {{ sendingEmails ? 'Sending...' : 'Send Invitation' }}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              
+              <CardContent class="space-y-4">
+                <div>
+                  <h4 class="text-sm font-semibold mb-3">Schools</h4>
+                  <div v-if="lorTasks.getTasksByRecommender(recommender.id!).length === 0" class="text-sm text-muted-foreground py-4">
+                    No schools assigned yet.
+                  </div>
+                  <div v-else class="border rounded-lg overflow-hidden">
+                    <table class="w-full">
+                      <thead class="bg-muted">
+                        <tr>
+                          <th class="text-left p-3 text-xs font-semibold">University</th>
+                          <th class="text-left p-3 text-xs font-semibold">Official App Portal</th>
+                          <th class="text-left p-3 text-xs font-semibold">Due</th>
+                          <th class="text-left p-3 text-xs font-semibold">State</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr 
+                          v-for="task in lorTasks.getTasksByRecommender(recommender.id!)"
+                          :key="task.id"
+                          class="border-t"
                         >
-                          {{ getStatusIcon(task.status) }}
-                        </div>
-                        <span class="state-text">{{ getStatusText(task.status) }}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <button class="btn-add-school-bottom" @click="openAssignSchools(recommender)">
-              + Add More Schools
-            </button>
+                          <td class="p-3">
+                            <div class="font-medium text-sm">{{ getTaskDetails(task)?.schoolName || 'Unknown School' }}</div>
+                            <div class="text-xs text-muted-foreground">{{ getTaskDetails(task)?.programName || '' }}</div>
+                          </td>
+                          <td class="p-3">
+                            <a 
+                              v-if="getTaskDetails(task)?.portalUrl" 
+                              :href="getTaskDetails(task)!.portalUrl" 
+                              target="_blank"
+                              class="text-primary hover:underline text-sm break-all"
+                            >
+                              {{ getTaskDetails(task)!.portalUrl }}
+                            </a>
+                            <span v-else class="text-muted-foreground text-sm">-</span>
+                          </td>
+                          <td class="p-3 text-sm">
+                            {{ formatDate(getTaskDetails(task)?.lorDeadline) }}
+                          </td>
+                          <td class="p-3">
+                            <div class="flex items-center gap-2">
+                              <div 
+                                class="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-semibold"
+                                :style="{ backgroundColor: getStatusColor(task.status) }"
+                              >
+                                {{ getStatusIcon(task.status) }}
+                              </div>
+                              <span class="text-sm">{{ getStatusText(task.status) }}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <Button
+                    variant="outline"
+                    class="w-full mt-3"
+                    @click="openAssignSchools(recommender)"
+                  >
+                    + Add More Schools
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
     
     <AddRecommenderModal 
       v-if="showAddRecommenderModal"
@@ -376,296 +397,5 @@ const sendInvitationEmails = async (recommender: Recommender) => {
       :recommender-name="selectedRecommender.name"
       @close="closeAssignSchools"
     />
-    <Sidebar />
   </div>
 </template>
-
-<style scoped>
-.layout {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.main {
-  flex: 1;
-  padding: 32px;
-  overflow-y: auto;
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-}
-
-.header-section h1 {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--dark);
-}
-
-.btn-add-professor {
-  padding: 12px 24px;
-  background: var(--coral);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-add-professor:hover {
-  background: #ff5252;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--gray);
-}
-
-.recommenders-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.recommender-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-.card-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.btn-edit {
-  padding: 8px 16px;
-  background: #2196f3;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-edit:hover {
-  background: #1976d2;
-}
-
-.btn-delete {
-  padding: 8px 16px;
-  background: #f44336;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-delete:hover {
-  background: #d32f2f;
-}
-
-.professor-info h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: var(--dark);
-}
-
-.email {
-  font-size: 14px;
-  color: var(--gray);
-  margin-bottom: 4px;
-}
-
-.affiliation {
-  font-size: 13px;
-  color: var(--gray);
-}
-
-.btn-send-invite {
-  padding: 10px 20px;
-  background: var(--coral);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.btn-send-invite:hover:not(:disabled) {
-  background: #ff5252;
-}
-
-.btn-send-invite:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.schools-section h4 {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 16px;
-  color: var(--dark);
-}
-
-.no-schools {
-  text-align: center;
-  padding: 20px;
-  color: var(--gray);
-  margin-bottom: 16px;
-}
-
-.schools-table {
-  margin-bottom: 16px;
-  overflow-x: auto;
-}
-
-.schools-table-content {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-}
-
-.schools-table-content thead {
-  background: var(--light-bg);
-}
-
-.schools-table-content th {
-  padding: 12px 16px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--dark);
-  border-bottom: 2px solid var(--border);
-}
-
-.schools-table-content td {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.schools-table-content tbody tr:hover {
-  background: rgba(255, 107, 107, 0.02);
-}
-
-.university-cell {
-  min-width: 200px;
-}
-
-.university-name {
-  font-weight: 600;
-  color: var(--dark);
-  margin-bottom: 4px;
-}
-
-.program-name {
-  font-size: 12px;
-  color: var(--gray);
-}
-
-.portal-cell {
-  min-width: 250px;
-}
-
-.portal-link {
-  color: var(--coral);
-  text-decoration: none;
-  word-break: break-all;
-}
-
-.portal-link:hover {
-  text-decoration: underline;
-}
-
-.no-portal {
-  color: var(--gray);
-  font-style: italic;
-}
-
-.due-cell {
-  min-width: 120px;
-  color: var(--dark);
-}
-
-.state-cell {
-  text-align: center;
-  min-width: 60px;
-}
-
-.state-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.state-indicator {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: help;
-  flex-shrink: 0;
-}
-
-.state-text {
-  font-size: 14px;
-  color: #333;
-  font-weight: 500;
-}
-
-.btn-add-school-bottom {
-  width: 100%;
-  padding: 10px;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: 6px;
-  color: var(--coral);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.btn-add-school-bottom:hover {
-  border-color: var(--coral);
-  background: rgba(255, 107, 107, 0.05);
-}
-</style>

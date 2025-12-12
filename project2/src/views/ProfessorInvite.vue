@@ -303,7 +303,7 @@ onMounted(() => {
       
       <div class="intro">
         <p>Dear Prof. {{ recommenderInfo?.name }},</p>
-        <p>Thank you for agreeing to write recommendation letters. Below are the programs that require your recommendation:</p>
+        <p>Thank you for agreeing to write recommendation letters. Below are the applications that require your recommendation:</p>
       </div>
       
       <div class="tasks-section">
@@ -334,7 +334,7 @@ onMounted(() => {
               </div>
               <div class="task-info">
                 <div class="info-row">
-                  <span class="info-label">Program:</span>
+                  <span class="info-label">Application:</span>
                   <span class="info-value">{{ getApplicationDetails(task.applicationId)?.programName || 'N/A' }}</span>
                 </div>
                 <div v-if="getApplicationDetails(task.applicationId)?.lorDeadline" class="info-row">
