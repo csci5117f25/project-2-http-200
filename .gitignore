@@ -1,0 +1,11 @@
+# macOS system files
+.DS_Store
+
+# Project data (large files)
+project2/Data/
+
+# Ignore all .md files except README.md and files in Data directory
+*.md
+!README.md
+!**/Data/**/*.md
+project2/.env

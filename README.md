@@ -36,7 +36,7 @@ Which (if any) progressive web app feature(s) does your app support?
 
 ### Overall Design Mockup
 <img src="Mock-ups/Mockup.png" alt="Overall Mockup" width="800"/>
-*Complete PhD application management system design overview, integrating all application components and information aggregation features*
+*Complete PhD application management system design overview*
 
 
 
@@ -67,7 +67,7 @@ Added a simple splash / landing screen before Login/Setup
 ### Program Information
 
 <img src="Mock-ups/Program_info.png" alt="Program Info" width="800"/>
-*PhD program information aggregator displaying detailed program requirements, deadlines, faculty research areas, and application checklist*
+*PhD program information page showing program requirements, deadlines, faculty research areas, and application checklist*
 
 - Broke the page into a clear three-step workflow
 
@@ -105,42 +105,9 @@ Added a simple splash / landing screen before Login/Setup
 ### AI Assisted Features
 
 <img src="Mock-ups/AI Assisted.png" alt="AI Assisted" width="800"/>
-*AI-powered writing assistant for generating, refining, and optimizing SOP drafts, recommendation letter requests, and other application materials*
+*Intelligent search feature for finding professors, programs, and SOP examples*
 
 Left the structure as-is since this part was already clear
-
-
-
-# Revised Mockup Feedback Response (QA Format)
-
-**Q1:** Why does the site go straight to the login/setup page with no splash page?  
-**A1:** We've already added a splash page before login, so that issue has been resolved.
-
-***
-
-**Q2:** The home page layout feels scattered, the left column is unclear, and the two-column design will break on mobile. How will this be addressed?  
-**A2:** Our original left-hand column represented various functions. To prevent display issues on mobile devices, we plan to move all function modules to the bottom, so this has been resolved according to your requirements.
-
-***
-
-**Q3:** The Statement of Purpose (SOP) section is completely unclear — how is the user supposed to interact with it?  
-**A3:** Users can select SOPs they want to see using filters, and then the right side is an editing block that supports editing and comparing different versions.
-
-***
-
-**Q4:** On the program detail page, what happens if the professor doesn’t exist in the database? Is there a fallback plan?  
-**A4:** Our professor information comes entirely from thousands of professors provided by CSranking. This open-source dataset is maintained by many people and is updated almost monthly. New professors are usually included in the statistics. If a professor is not listed, we will manually add them, but this issue rarely occurs, and users can choose other professors.
-
-***
-
-**Q5:** The TODO list currently looks like plain text blocks with no indication it’s interactive. How do users add, edit, or complete tasks?  
-**A5:** We've now modified the format of the Todo List block, so users can easily edit it by clicking on it.
-
-***
-
-**Q6:** In the recommendation letter section, after entering a professor’s email, does the system automatically send a request, or is it just manual tracking? The flow is unclear.  
-
-**A6:** The system will automatically send email reminders to professors. Once professors have filled out the form, they can directly use this system to inform applicants that they have completed the form, instead of repeatedly sending emails to applicants. Applicants can clearly see which schools the professor has filled out and which schools are still missing.
 
 
 ## Testing Notes
@@ -160,13 +127,67 @@ along with a very brief caption:**
 
 
 
+## Technology Stack & References
+
+### Core Framework
+* [Vue 3](https://vuejs.org/) - Progressive JavaScript framework
+  * [Vue Composition API](https://vuejs.org/api/composition-api-setup.html) - Used for component logic
+  * [Vue Component Events](https://vuejs.org/guide/components/events.html) - Component communication
+  * [Vue Props](https://vuejs.org/guide/components/props.html) - Component props
+  * [Vue Conditional Rendering](https://vuejs.org/guide/essentials/conditional.html) - Used `v-if` and `v-else` for modal display and expanded card states
+* [TypeScript](https://www.typescriptlang.org/) - Typed superset of JavaScript
+  * [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+* [Vite](https://vitejs.dev/) - Next generation frontend tooling
+  * [Vite Guide](https://vitejs.dev/guide/)
+
+### Routing & State Management
+* [Vue Router](https://router.vuejs.org/) - Official router for Vue.js
+  * [Vue Router Guide](https://router.vuejs.org/guide/) - Used for navigation between login, home, SOP, and other views
+* [Pinia](https://pinia.vuejs.org/) - The Vue Store that you will enjoy using
+  * [Pinia Core Concepts](https://pinia.vuejs.org/core-concepts/) - Used for managing auth, projects, SOP, and application state
+
+### UI Framework & Styling
+* [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+  * [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+* [PostCSS](https://postcss.org/) - CSS tool for transforming styles
+  * [PostCSS Documentation](https://postcss.org/docs/)
+* [Radix Vue](https://www.radix-vue.com/) - Unstyled, accessible components for Vue
+  * [Radix Vue Documentation](https://www.radix-vue.com/getting-started/introduction)
+  * Used as the foundation for shadcn-vue components
+* [shadcn-vue](https://www.shadcn-vue.com/) - Re-usable components built with Radix Vue and Tailwind CSS
+  * Components used: Button, Card, Dialog, Input, Select, Badge, Tooltip, Separator
+
+### UI Utilities
+* [clsx](https://github.com/lukeed/clsx) - Tiny utility for constructing className strings
+* [tailwind-merge](https://github.com/dcastil/tailwind-merge) - Merge Tailwind CSS classes without style conflicts
+* [class-variance-authority](https://cva.style/) - Create type-safe variant APIs for your components
+
+### Backend & Database
+* [Firebase](https://firebase.google.com/) - Backend-as-a-Service platform
+  * [Firebase Documentation](https://firebase.google.com/docs)
+  * [Firebase Firestore](https://firebase.google.com/docs/firestore) - Used for data storage
+  * [Firebase Authentication](https://firebase.google.com/docs/auth) - Used for user authentication
+  * [Firebase Cloud Functions](https://firebase.google.com/docs/functions) - Used for email sending functionality
+
+### Third-Party Services & Libraries
+* [OpenAI API](https://platform.openai.com/docs) - AI service for intelligent search functionality
+  * [OpenAI Node.js SDK](https://github.com/openai/openai-node)
+* [PDF.js](https://mozilla.github.io/pdf.js/) - PDF rendering library
+  * [PDF.js Documentation](https://mozilla.github.io/pdf.js/getting_started/)
+  * Used for displaying SOP PDFs in the application
+* [md-editor-v3](https://imzbf.github.io/md-editor-v3/) - Markdown editor component for Vue 3
+  * [md-editor-v3 Documentation](https://imzbf.github.io/md-editor-v3/docs)
+
 ## External Dependencies
 
 **Document integrations with 3rd Party code or services here.
 Please do not document required libraries (e.g., VUE, Firebase, vuefire).**
 
-* Library or service name: description of use
-* ...
+* [CSRankings](https://github.com/emeryberger/CSRankings) - Open-source dataset providing professor and institution data. The application loads professor information from CSRankings data (via `professors.json`) for searching and selecting professors when creating application entries. Website: [csrankings.org](http://csrankings.org/)
+
+* [CS PhD Statements of Purpose](https://cs-sop.notion.site/CS-PhD-Statements-of-Purpose-df39955313834889b7ac5411c37b958d) - Open-source collection of PhD application statements. The application loads SOP examples from CSV data for reference. These examples are displayed in the SOP view and used in the intelligent search feature.
+
+* [OpenAI API](https://platform.openai.com/docs) - Third-party service used for intelligent search functionality. The application uses OpenAI's API to help users find relevant professors, programs, and SOP examples based on natural language queries. User queries are processed and matched against CSRankings professor data and SOP examples to provide recommendations.
 
 **If there's anything else you would like to disclose about how your project
 relied on external code, expertise, or anything else, please disclose that

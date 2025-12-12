@@ -1,11 +1,5 @@
 <script setup lang="ts">
-<<<<<<< HEAD
-import { useSOP } from '../stores/sop'
-import Sidebar from '../components/Sidebar.vue'
-
-const sop = useSOP()
-=======
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { loadSOPData, type SOPData } from '../utils/aiSearch'
 import { useAuth } from '../stores/auth'
@@ -16,8 +10,9 @@ import Input from '../components/ui/input.vue'
 import Button from '../components/ui/button.vue'
 import Badge from '../components/ui/badge.vue'
 // @ts-ignore - md-editor-v3 type definitions issue
-import { MdEditor } from 'md-editor-v3'
+import { MdEditor, MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/style.css'
+import 'md-editor-v3/lib/preview.css'
 
 const route = useRoute()
 const router = useRouter()
@@ -34,6 +29,181 @@ const sopListContainer = ref<HTMLElement | null>(null)
 const isInitialized = ref(false) // Flag to prevent saving during initialization
 const pdfLoadFailed = ref(false) // Track if PDF failed to load
 const editorContent = ref('') // Markdown editor content
+const editorMode = ref<'preview' | 'edit'>('preview') // Editor mode: preview (Typora-like) or edit
+const leftPanelWidth = ref(45) // Left panel width percentage
+const isResizing = ref(false) // Track if user is resizing
+
+// Resize functionality - Optimized for smooth dragging
+let resizeStartX = 0
+let resizeStartWidth = 0
+let resizeContainer: HTMLElement | null = null
+let isDragging = false
+let animationFrameId: number | null = null
+let pendingWidth: number | null = null
+
+// Store event handlers to ensure proper cleanup
+let currentMouseMoveHandler: ((e: MouseEvent) => void) | null = null
+let currentMouseUpHandler: (() => void) | null = null
+let currentMouseLeaveHandler: (() => void) | null = null
+
+// Store iframe references for disabling during drag
+let pdfIframes: HTMLIFrameElement[] = []
+
+// Find and disable all PDF iframes during drag
+const disablePDFIframes = () => {
+  pdfIframes = []
+  const iframes = document.querySelectorAll('iframe[src*="drive.google.com"], iframe[src*="github.com"]')
+  iframes.forEach((iframe) => {
+    const iframeEl = iframe as HTMLIFrameElement
+    pdfIframes.push(iframeEl)
+    iframeEl.style.pointerEvents = 'none'
+    // Also disable pointer events on the iframe's parent container
+    const parent = iframeEl.parentElement
+    if (parent) {
+      parent.style.pointerEvents = 'none'
+    }
+  })
+}
+
+// Re-enable all PDF iframes after drag
+const enablePDFIframes = () => {
+  pdfIframes.forEach((iframe) => {
+    iframe.style.pointerEvents = ''
+    const parent = iframe.parentElement
+    if (parent) {
+      parent.style.pointerEvents = ''
+    }
+  })
+  pdfIframes = []
+}
+
+// Cleanup function to ensure all listeners are removed
+const cleanupResizeListeners = () => {
+  if (currentMouseMoveHandler) {
+    document.removeEventListener('mousemove', currentMouseMoveHandler)
+    currentMouseMoveHandler = null
+  }
+  if (currentMouseUpHandler) {
+    document.removeEventListener('mouseup', currentMouseUpHandler)
+    window.removeEventListener('blur', currentMouseUpHandler)
+    currentMouseUpHandler = null
+  }
+  if (currentMouseLeaveHandler) {
+    document.removeEventListener('mouseleave', currentMouseLeaveHandler)
+    currentMouseLeaveHandler = null
+  }
+  
+  // Cancel animation frame
+  if (animationFrameId !== null) {
+    cancelAnimationFrame(animationFrameId)
+    animationFrameId = null
+  }
+  
+  // Apply final pending width if any
+  if (pendingWidth !== null) {
+    leftPanelWidth.value = pendingWidth
+    pendingWidth = null
+  }
+  
+  // Re-enable PDF iframes
+  enablePDFIframes()
+  
+  // Restore body styles
+  document.body.style.cursor = ''
+  document.body.style.userSelect = ''
+  document.body.style.pointerEvents = ''
+  
+  // Reset state
+  isDragging = false
+  isResizing.value = false
+  resizeStartX = 0
+  resizeStartWidth = 0
+  resizeContainer = null
+}
+
+const startResize = (e: MouseEvent) => {
+  // Prevent default to avoid text selection
+  e.preventDefault()
+  e.stopPropagation()
+  
+  // Always cleanup any existing listeners first
+  cleanupResizeListeners()
+  
+  if (isDragging) return // Already dragging (shouldn't happen after cleanup)
+  
+  isDragging = true
+  isResizing.value = true
+  
+  resizeStartX = e.clientX
+  resizeStartWidth = leftPanelWidth.value
+  resizeContainer = (e.target as HTMLElement).closest('main')?.parentElement || null
+  
+  if (!resizeContainer) {
+    cleanupResizeListeners()
+    return
+  }
+  
+  const containerWidth = resizeContainer.clientWidth
+  
+  // Use requestAnimationFrame for smooth updates
+  const updateWidth = () => {
+    if (pendingWidth !== null) {
+      leftPanelWidth.value = pendingWidth
+      pendingWidth = null
+    }
+    if (isDragging) {
+      animationFrameId = requestAnimationFrame(updateWidth)
+    }
+  }
+  
+  const handleMouseMove = (moveEvent: MouseEvent) => {
+    if (!isDragging || !resizeContainer) {
+      cleanupResizeListeners()
+      return
+    }
+    
+    const diff = moveEvent.clientX - resizeStartX
+    const diffPercent = (diff / containerWidth) * 100
+    const newWidth = resizeStartWidth + diffPercent
+    const clampedWidth = Math.max(30, Math.min(70, newWidth))
+    
+    // Queue the update for next animation frame
+    pendingWidth = clampedWidth
+  }
+  
+  const handleMouseUp = () => {
+    cleanupResizeListeners()
+  }
+  
+  const handleMouseLeave = () => {
+    cleanupResizeListeners()
+  }
+  
+  // Store handlers for cleanup
+  currentMouseMoveHandler = handleMouseMove
+  currentMouseUpHandler = handleMouseUp
+  currentMouseLeaveHandler = handleMouseLeave
+  
+  // Add event listeners with passive: false for better performance
+  document.addEventListener('mousemove', handleMouseMove, { passive: false })
+  document.addEventListener('mouseup', handleMouseUp, { passive: false })
+  document.addEventListener('mouseleave', handleMouseLeave, { passive: false })
+  
+  // Also listen on window for better coverage (especially for iframes)
+  window.addEventListener('blur', handleMouseUp, { passive: false })
+  currentMouseUpHandler = handleMouseUp // Store for cleanup
+  
+  // Disable PDF iframes to prevent interaction during drag
+  disablePDFIframes()
+  
+  // Set body styles to prevent text selection during drag
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  document.body.style.pointerEvents = 'auto'
+  
+  // Start animation frame loop
+  animationFrameId = requestAnimationFrame(updateWidth)
+}
 
 // Get localStorage key for current user (page state)
 const getStorageKey = (): string => {
@@ -99,17 +269,153 @@ const loadAllSOPs = async () => {
 }
 
 // Filtered SOPs based on search
+// Enhanced search with multi-word, weighted scoring, and fuzzy matching
 const filteredSOPs = computed(() => {
   if (!searchQuery.value.trim()) return allSOPs.value
   
-  const query = searchQuery.value.toLowerCase()
-  return allSOPs.value.filter(sop => 
-    sop.name.toLowerCase().includes(query) ||
-    sop.field.toLowerCase().includes(query) ||
-    sop.institution.toLowerCase().includes(query) ||
-    sop.content.toLowerCase().includes(query)
-  )
+  const query = searchQuery.value.toLowerCase().trim()
+  const queryWords = query.split(/\s+/).filter(word => word.length > 0)
+  
+  // Score each SOP
+  const scoredSOPs = allSOPs.value.map(sop => {
+    let score = 0
+    let matchCount = 0
+    
+    const nameLower = sop.name.toLowerCase()
+    const fieldLower = sop.field.toLowerCase()
+    const institutionLower = sop.institution.toLowerCase()
+    const contentLower = sop.content.toLowerCase()
+    
+    // Multi-word search: each word must match somewhere (AND logic)
+    for (const word of queryWords) {
+      let wordMatched = false
+      
+      // Exact match gets highest score
+      if (nameLower === word || fieldLower === word || institutionLower === word) {
+        score += 20
+        wordMatched = true
+      }
+      
+      // Name matches (highest priority)
+      if (nameLower.includes(word)) {
+        score += 15
+        wordMatched = true
+      } else if (fuzzyMatch(nameLower, word)) {
+        score += 10
+        wordMatched = true
+      }
+      
+      // Field matches (high priority)
+      if (fieldLower.includes(word)) {
+        score += 12
+        wordMatched = true
+      } else if (fuzzyMatch(fieldLower, word)) {
+        score += 8
+        wordMatched = true
+      }
+      
+      // Institution matches (high priority)
+      if (institutionLower.includes(word)) {
+        score += 10
+        wordMatched = true
+      } else if (fuzzyMatch(institutionLower, word)) {
+        score += 6
+        wordMatched = true
+      }
+      
+      // Content matches (lower priority)
+      if (contentLower.includes(word)) {
+        score += 3
+        wordMatched = true
+      } else if (fuzzyMatch(contentLower, word)) {
+        score += 1
+        wordMatched = true
+      }
+      
+      if (wordMatched) {
+        matchCount++
+      }
+    }
+    
+    // Bonus for matching all words
+    if (matchCount === queryWords.length) {
+      score += 5
+    }
+    
+    // Penalty for partial matches (not all words matched)
+    if (matchCount < queryWords.length && matchCount > 0) {
+      score = score * (matchCount / queryWords.length)
+    }
+    
+    return { sop, score, matchCount }
+  })
+  
+  // Filter: must match at least one word, and if multiple words, prefer matches with more words
+  const filtered = scoredSOPs.filter(item => item.matchCount > 0)
+  
+  // Sort by score (descending), then by matchCount (descending)
+  filtered.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score
+    }
+    return b.matchCount - a.matchCount
+  })
+  
+  return filtered.map(item => item.sop)
 })
+
+// Fuzzy matching helper: checks if target contains word with some tolerance
+function fuzzyMatch(target: string, word: string): boolean {
+  if (word.length < 3) return false // Too short for fuzzy matching
+  
+  // Exact substring match
+  if (target.includes(word)) return true
+  
+  // Check for word with missing characters (e.g., "stanford" matches "stanfrd")
+  if (word.length >= 4) {
+    let targetIndex = 0
+    let wordIndex = 0
+    let mismatches = 0
+    
+    while (targetIndex < target.length && wordIndex < word.length) {
+      if (target[targetIndex] === word[wordIndex]) {
+        targetIndex++
+        wordIndex++
+      } else {
+        // Allow one missing character
+        if (mismatches < 1 && wordIndex > 0) {
+          wordIndex++
+          mismatches++
+        } else {
+          targetIndex++
+        }
+      }
+    }
+    
+    if (wordIndex === word.length) return true
+  }
+  
+  // Check for similar words (Levenshtein-like, simplified)
+  if (word.length >= 4) {
+    const targetWords = target.split(/\s+/)
+    for (const targetWord of targetWords) {
+      if (targetWord.length >= word.length - 1 && targetWord.length <= word.length + 1) {
+        let differences = 0
+        const minLen = Math.min(targetWord.length, word.length)
+        for (let i = 0; i < minLen; i++) {
+          if (targetWord[i] !== word[i]) differences++
+        }
+        differences += Math.abs(targetWord.length - word.length)
+        // Allow up to 1-2 character differences for words of length 4+
+        if (differences <= Math.max(1, Math.floor(word.length / 4))) {
+          return true
+        }
+      }
+    }
+  }
+  
+  return false
+}
 
 // Save editor content to localStorage
 const saveEditorContentToLocalStorage = () => {
@@ -465,6 +771,11 @@ const findSOPByQuery = (name?: string, field?: string, institution?: string): SO
 }
 
 // Initialize
+// Cleanup on component unmount
+onBeforeUnmount(() => {
+  cleanupResizeListeners()
+})
+
 onMounted(async () => {
   // Load saved state
   const savedState = loadState()
@@ -555,7 +866,6 @@ watch(editorContent, (newContent, oldContent) => {
     }
   }, 1000) // Auto-save after 1 second of inactivity
 })
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
 </script>
 
 <template>
@@ -564,37 +874,44 @@ watch(editorContent, (newContent, oldContent) => {
     <main class="flex-1 overflow-hidden">
       <div class="h-full flex">
         <!-- Left: SOP Browser -->
-        <div class="w-[45%] border-r border-border flex flex-col bg-background overflow-hidden">
+        <div 
+          class="h-full flex flex-col bg-background overflow-hidden"
+          :style="{ 
+            width: `${leftPanelWidth}%`, 
+            minWidth: '30%', 
+            maxWidth: '70%',
+            transition: isResizing ? 'none' : 'width 0.2s ease-out'
+          }"
+        >
           <!-- List View -->
-          <div v-if="!showSOPDetail" class="flex flex-col h-full">
-            <!-- Header Card -->
-            <Card class="m-4 p-4">
-              <div class="space-y-4">
-                <div>
-                  <h2 class="text-2xl font-bold mb-2">SOP Reference Library</h2>
-                  <p class="text-sm text-muted-foreground">Browse example SOPs from successful PhD applicants</p>
-                </div>
-                
-                <!-- Search Input -->
-                <Input
-                  :value="searchQuery"
-                  @update:value="(val: string) => searchQuery = val"
-                  placeholder="Search by name, field, institution..."
-                  class="w-full"
-                />
-                
-                <!-- SOP Count -->
-                <p class="text-xs text-muted-foreground">
-                  {{ filteredSOPs.length }} SOP{{ filteredSOPs.length !== 1 ? 's' : '' }} found
-                </p>
-              </div>
-            </Card>
-            
-            <!-- SOP List -->
+          <div v-if="!showSOPDetail" class="flex flex-col h-full overflow-hidden">
+            <!-- SOP List Container -->
             <div 
               ref="sopListContainer"
-              class="flex-1 overflow-y-auto px-4 pb-4 space-y-3"
+              class="flex-1 overflow-y-auto px-4 pb-4 space-y-3 overflow-x-hidden sop-list-scrollable"
             >
+              <!-- Header Card - Aligned with Editor top card -->
+              <Card class="p-4 mt-4">
+                <div class="space-y-4">
+                  <div>
+                    <h2 class="text-2xl font-bold mb-2">SOP Reference Library</h2>
+                    <p class="text-sm text-muted-foreground">Browse example SOPs from successful PhD applicants</p>
+                  </div>
+                  
+                  <!-- Search Input -->
+                  <Input
+                    :value="searchQuery"
+                    @update:value="(val: string) => searchQuery = val"
+                    placeholder="Search by name, field, institution..."
+                    class="w-full"
+                  />
+                  
+                  <!-- SOP Count -->
+                  <p class="text-xs text-muted-foreground">
+                    {{ filteredSOPs.length }} SOP{{ filteredSOPs.length !== 1 ? 's' : '' }} found
+                  </p>
+                </div>
+              </Card>
               <Card
                 v-for="sop in filteredSOPs"
                 :key="`${sop.name}-${sop.institution}`"
@@ -630,38 +947,38 @@ watch(editorContent, (newContent, oldContent) => {
           </div>
           
           <!-- Detail View -->
-          <div v-else class="flex flex-col h-full">
+          <div v-else class="flex flex-col h-full overflow-hidden">
             <!-- Header Card with Back Button -->
-            <Card class="m-4 mb-0 p-4">
-              <div class="flex items-center gap-3 mb-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  @click="backToList"
-                  class="h-8 w-8"
-                >
-                  ←
-                </Button>
+            <Card class="m-4 mb-0 p-4 relative">
+              <!-- Back Button - Fixed to top-right corner -->
+              <Button
+                variant="ghost"
+                size="icon"
+                @click="backToList"
+                class="absolute top-4 right-4 h-8 w-8 z-10"
+              >
+                ←
+              </Button>
+              
+              <div class="pr-10">
                 <div class="flex-1">
-                  <div class="flex items-start justify-between">
-                    <div class="flex-1">
-                      <h2 class="text-xl font-bold">{{ selectedSOP?.name }}</h2>
-                      <div class="flex flex-wrap gap-2 mt-2">
-                        <Badge variant="outline">{{ selectedSOP?.field }}</Badge>
-                        <Badge variant="outline">{{ selectedSOP?.institution }}</Badge>
-                      </div>
-                      <!-- Display statementLink if available -->
-                      <div v-if="selectedSOP?.statementLink" class="mt-3 pt-3 border-t">
-                        <a 
-                          :href="selectedSOP.statementLink" 
-                          target="_blank"
-                          class="text-sm text-primary hover:underline flex items-center gap-2"
-                        >
-                          <span>View Source: {{ selectedSOP.statementLink }}</span>
-                          <span>↗</span>
-                        </a>
-                      </div>
-                    </div>
+                  <h2 class="text-xl font-bold pr-8">{{ selectedSOP?.name }}</h2>
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline">{{ selectedSOP?.field }}</Badge>
+                    <Badge variant="outline">{{ selectedSOP?.institution }}</Badge>
+                  </div>
+                  <!-- Display statementLink if available -->
+                  <div v-if="selectedSOP?.statementLink" class="mt-3 pt-3 border-t border-border overflow-hidden">
+                    <div class="text-sm text-muted-foreground mb-1">View Source:</div>
+                    <a 
+                      :href="selectedSOP.statementLink" 
+                      target="_blank"
+                      class="text-sm text-primary hover:underline break-all word-break break-words overflow-wrap-anywhere block"
+                      style="word-break: break-all; overflow-wrap: anywhere;"
+                    >
+                      {{ selectedSOP.statementLink }}
+                      <span class="inline-block ml-1">↗</span>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -671,30 +988,17 @@ watch(editorContent, (newContent, oldContent) => {
             <div class="flex-1 overflow-hidden px-4 pb-4">
               <Card class="h-full flex flex-col">
                 <!-- PDF Preview (if available) -->
-                <div v-if="getPDFUrl(selectedSOP)" class="flex-1 overflow-hidden flex flex-col">
+                <div v-if="getPDFUrl(selectedSOP)" class="flex-1 overflow-hidden flex flex-col pdf-preview-container">
                   <!-- PDF Preview iframe -->
                   <div class="flex-1 overflow-hidden relative">
                     <iframe
-                      :src="getPDFUrl(selectedSOP)"
-                      class="w-full h-full border-0"
+                      :src="getPDFUrl(selectedSOP) || undefined"
+                      class="w-full h-full border-0 pdf-iframe"
+                      :style="{ pointerEvents: isResizing ? 'none' : 'auto' }"
                       allow="autoplay"
                       frameborder="0"
                       @error="handlePDFError"
                     />
-                  </div>
-                  <!-- Link to open in new tab -->
-                  <div class="p-3 border-t bg-muted/30 flex items-center justify-between">
-                    <a 
-                      :href="selectedSOP?.statementLink ? getDirectUrl(selectedSOP.statementLink) : (getPDFUrl(selectedSOP) || '#')" 
-                      target="_blank"
-                      class="text-sm text-primary hover:underline flex items-center gap-2"
-                    >
-                      <span>Open PDF in new tab</span>
-                      <span>↗</span>
-                    </a>
-                    <p class="text-xs text-muted-foreground">
-                      {{ getPlatformName(selectedSOP?.statementLink) }}
-                    </p>
                   </div>
                 </div>
                 
@@ -720,31 +1024,69 @@ watch(editorContent, (newContent, oldContent) => {
           </div>
         </div>
         
+        <!-- Resizable Handle - Subtle and modern -->
+        <div
+          class="relative flex-shrink-0 z-20 resizable-handle-container"
+          style="width: 2px; margin-left: 4px;"
+        >
+          <div
+            class="absolute inset-0 bg-border hover:bg-primary/40 transition-colors cursor-col-resize"
+            @mousedown="startResize"
+            :class="{ 'bg-primary/60': isResizing }"
+            style="left: -4px; right: -4px; width: calc(100% + 8px);"
+          />
+        </div>
+        
         <!-- Right: Markdown Editor -->
-        <div class="flex-1 flex flex-col bg-background overflow-hidden">
+        <div 
+          class="h-full flex flex-col bg-background overflow-hidden flex-1"
+          :style="{ minWidth: '30%' }"
+        >
           <Card class="m-4 mb-0 p-4">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <h2 class="text-xl font-bold">SOP Editor</h2>
                 <p class="text-sm text-muted-foreground mt-1">Write and preview your Statement of Purpose</p>
               </div>
-              <Button
-                @click="exportAsMarkdown"
-                :disabled="!editorContent.trim()"
-                variant="default"
-                size="sm"
-              >
-                <span>Export MD</span>
-              </Button>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <Button
+                  @click="editorMode = editorMode === 'preview' ? 'edit' : 'preview'"
+                  variant="outline"
+                  size="sm"
+                >
+                  <span>{{ editorMode === 'preview' ? 'Edit' : 'Preview' }}</span>
+                </Button>
+                <Button
+                  @click="exportAsMarkdown"
+                  :disabled="!editorContent.trim()"
+                  variant="default"
+                  size="sm"
+                >
+                  <span>Export MD</span>
+                </Button>
+              </div>
             </div>
           </Card>
           
-          <!-- Markdown Editor with Preview -->
+          <!-- Markdown Editor - Preview Mode (Typora-like) -->
           <div class="flex-1 overflow-hidden px-4 pb-4">
             <Card class="h-full flex flex-col overflow-hidden">
+              <!-- Preview Mode: Use MdPreview for pure preview -->
+              <MdPreview
+                v-if="editorMode === 'preview'"
+                :modelValue="editorContent"
+                :theme="editorTheme"
+                previewTheme="github"
+                codeTheme="github"
+                class="h-full overflow-y-auto"
+                style="height: 100%;"
+              />
+              <!-- Edit Mode: Use MdEditor for editing -->
               <MdEditor
+                v-else
                 v-model="editorContent"
                 :theme="editorTheme"
+                mode="edit"
                 language="en-US"
                 previewTheme="github"
                 codeTheme="github"
@@ -818,10 +1160,273 @@ You can use Markdown formatting:
 :deep(.md-editor-preview) {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
 }
 
 :deep(.md-editor-preview-dark) {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
+
+/* Preview component styling */
+:deep(.md-preview-wrapper) {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.8;
+}
+
+:deep(.md-preview) {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Ensure lists display correctly in MdPreview */
+:deep(.md-preview ul),
+:deep(.md-preview ol) {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+  display: block;
+}
+
+:deep(.md-preview ul) {
+  list-style-type: disc;
+}
+
+:deep(.md-preview ol) {
+  list-style-type: decimal;
+}
+
+:deep(.md-preview li) {
+  display: list-item !important;
+  margin-bottom: 0.5rem;
+  list-style-position: outside;
+  list-style-type: inherit;
+}
+
+/* Remove any pseudo-elements that might cause duplication */
+:deep(.md-preview li::before),
+:deep(.md-preview li::after) {
+  content: none !important;
+  display: none !important;
+}
+
+:deep(.md-preview ul ul),
+:deep(.md-preview ol ol),
+:deep(.md-preview ul ol),
+:deep(.md-preview ol ul) {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+:deep(.md-preview ul ul) {
+  list-style-type: circle;
+}
+
+:deep(.md-preview ul ul ul) {
+  list-style-type: square;
+}
+
+/* Typora-like preview styling */
+:deep(.md-editor-preview-wrapper) {
+  padding: 2rem;
+}
+
+:deep(.md-editor-preview h1) {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid hsl(var(--border));
+  padding-bottom: 0.5rem;
+}
+
+:deep(.md-editor-preview h2) {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+:deep(.md-editor-preview h3) {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+:deep(.md-editor-preview p) {
+  margin-bottom: 1rem;
+}
+
+:deep(.md-editor-preview ul),
+:deep(.md-editor-preview ol) {
+  margin-bottom: 1rem;
+  padding-left: 2rem;
+  display: block;
+}
+
+:deep(.md-editor-preview ul) {
+  list-style-type: disc;
+}
+
+:deep(.md-editor-preview ol) {
+  list-style-type: decimal;
+}
+
+:deep(.md-editor-preview li) {
+  display: list-item !important;
+  margin-bottom: 0.5rem;
+  list-style-position: outside !important;
+  list-style-type: inherit !important;
+  content: none !important;
+}
+
+/* Remove any pseudo-elements that might cause duplication */
+:deep(.md-editor-preview li::before),
+:deep(.md-editor-preview li::after) {
+  content: none !important;
+  display: none !important;
+}
+
+/* Remove any pseudo-elements that might cause duplication */
+:deep(.md-editor-preview li::before),
+:deep(.md-editor-preview li::after) {
+  content: none !important;
+  display: none !important;
+}
+
+:deep(.md-editor-preview ul ul),
+:deep(.md-editor-preview ol ol),
+:deep(.md-editor-preview ul ol),
+:deep(.md-editor-preview ol ul) {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+:deep(.md-editor-preview ul ul) {
+  list-style-type: circle;
+}
+
+:deep(.md-editor-preview ul ul ul) {
+  list-style-type: square;
+}
+
+:deep(.md-editor-preview blockquote) {
+  border-left: 4px solid hsl(var(--primary));
+  padding-left: 1rem;
+  margin-left: 0;
+  margin-bottom: 1rem;
+  color: hsl(var(--muted-foreground));
+}
+
+:deep(.md-editor-preview code) {
+  background-color: hsl(var(--muted));
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+:deep(.md-editor-preview pre) {
+  background-color: hsl(var(--muted));
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+:deep(.md-editor-preview pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* Resizable Handle - Ensure visibility and proper layering */
+main > div > div:has([class*="cursor-col-resize"]) {
+  position: relative;
+  z-index: 20;
+}
+
+/* Smooth resizing - disable transitions during drag */
+.resizable-handle-container {
+  will-change: transform;
+}
+
+/* Disable PDF iframe interaction during resize */
+.pdf-preview-container {
+  transition: pointer-events 0s;
+}
+
+.pdf-preview-container:has(.resizable-handle-container:hover) {
+  pointer-events: none;
+}
+
+/* Ensure left panel content doesn't overflow */
+main > div > div:first-child {
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+/* SOP List scrollbar styling - separate from resizable handle */
+.sop-list-scrollable {
+  padding-right: 0.75rem; /* Add padding to separate scrollbar from resizable handle */
+}
+
+.sop-list-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sop-list-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+  margin-right: 2px; /* Add margin to separate from resizable handle */
+}
+
+.sop-list-scrollable::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.sop-list-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar */
+.sop-list-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* Markdown Editor Toolbar - Enable horizontal scrolling */
+:deep(.md-editor-toolbar-wrapper) {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+:deep(.md-editor-toolbar-wrapper::-webkit-scrollbar) {
+  height: 6px;
+}
+
+:deep(.md-editor-toolbar-wrapper::-webkit-scrollbar-track) {
+  background: transparent;
+}
+
+:deep(.md-editor-toolbar-wrapper::-webkit-scrollbar-thumb) {
+  background-color: hsl(var(--border));
+  border-radius: 3px;
+}
+
+:deep(.md-editor-toolbar-wrapper::-webkit-scrollbar-thumb:hover) {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+:deep(.md-editor-toolbar) {
+  min-width: max-content;
+  flex-wrap: nowrap;
+}
+
 </style>

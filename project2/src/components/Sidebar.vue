@@ -70,7 +70,13 @@ const handleLogout = async () => {
   }
 }
 
-const sidebarWidth = computed(() => sidebarStore.isCollapsed ? 'w-32' : 'w-72')
+// Responsive sidebar width with minimum constraints
+const sidebarWidth = computed(() => {
+  if (sidebarStore.isCollapsed) {
+    return 'w-16 md:w-24 lg:w-32' // Responsive collapsed: mobile 16, tablet 24, desktop 32
+  }
+  return 'w-64 md:w-72 lg:w-80' // Responsive expanded: mobile 64, tablet 72, desktop 80
+})
 </script>
 
 <template>

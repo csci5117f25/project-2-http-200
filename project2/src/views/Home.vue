@@ -141,8 +141,8 @@ const closeModal = () => {
     <Sidebar />
     
     <main class="flex-1 overflow-y-auto transition-all duration-300 ease-in-out">
-      <div class="p-6">
-        <div class="max-w-7xl mx-auto space-y-6">
+      <div class="p-4 md:p-6">
+        <div class="max-w-5xl lg:max-w-7xl mx-auto space-y-6">
           <!-- Title Card -->
           <Card class="p-6">
             <h1 class="text-3xl font-bold mb-2">Dashboard</h1>

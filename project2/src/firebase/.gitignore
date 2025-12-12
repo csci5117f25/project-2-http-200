@@ -1,2 +1,2 @@
-# Firebase 配置文件应该被忽略，但 config.ts 模板需要提交
-# 实际配置应该通过环境变量或单独的配置文件管理
+# Firebase config files should be ignored, but config.ts template needs to be committed
+# Actual configuration should be managed through environment variables or separate config files

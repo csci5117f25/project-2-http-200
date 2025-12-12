@@ -3,8 +3,6 @@ import { ref, onMounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '../stores/auth'
 import Sidebar from '../components/Sidebar.vue'
-<<<<<<< HEAD
-=======
 import { 
   loadSOPData, 
   preprocessQuery,
@@ -14,10 +12,10 @@ import {
   hasPersonName
 } from '../utils/aiSearch'
 import { searchWithAI } from '../services/openai'
+import { useSOP } from '../stores/sop'
 import Card from '../components/ui/card.vue'
 import Button from '../components/ui/button.vue'
 import Input from '../components/ui/input.vue'
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
 
 interface Message {
   id: string
@@ -55,6 +53,7 @@ interface SOPReference {
 
 const router = useRouter()
 const auth = useAuth()
+const sopStore = useSOP()
 
 // Get user initial for avatar
 const getUserInitial = () => {
@@ -68,78 +67,8 @@ const typingMessages = ref<Record<string, string>>({}) // Store typing content f
 const messagesContainer = ref<HTMLElement | null>(null)
 const isInitialized = ref(false) // Flag to prevent saving during initialization
 
-// Mock data for demonstration
-const mockProfessors: SearchResult[] = [
-  {
-    id: '1',
-    type: 'professor',
-    name: 'Dr. Jane Smith',
-    details: 'Expert in Machine Learning and Computer Vision',
-    relevance: 0.95,
-    metadata: {
-      university: 'MIT',
-      department: 'Computer Science',
-      researchAreas: ['Machine Learning', 'Computer Vision', 'Deep Learning'],
-      email: 'jane.smith@mit.edu',
-      website: 'https://example.com'
-    }
-  },
-  {
-    id: '2',
-    type: 'professor',
-    name: 'Dr. John Doe',
-    details: 'Specializes in Natural Language Processing',
-    relevance: 0.88,
-    metadata: {
-      university: 'Stanford',
-      department: 'Computer Science',
-      researchAreas: ['NLP', 'AI', 'Computational Linguistics'],
-      email: 'john.doe@stanford.edu'
-    }
-  }
-]
-
-const mockSchools: SearchResult[] = [
-  {
-    id: '3',
-    type: 'school',
-    name: 'MIT Computer Science',
-    details: 'Top-ranked program with strong ML research',
-    relevance: 0.92,
-    metadata: {
-      university: 'MIT',
-      department: 'Computer Science'
-    }
-  },
-  {
-    id: '4',
-    type: 'school',
-    name: 'Stanford CS PhD Program',
-    details: 'Excellent program in AI and ML',
-    relevance: 0.90,
-    metadata: {
-      university: 'Stanford',
-      department: 'Computer Science'
-    }
-  }
-]
-
-const mockSOPReferences: SOPReference[] = [
-  {
-    id: '1',
-    title: 'Research Experience in ML',
-    excerpt: 'During my undergraduate research, I worked on developing novel deep learning architectures...',
-    relevance: 0.85,
-    link: '/sop'
-  },
-  {
-    id: '2',
-    title: 'Why This Program',
-    excerpt: 'I am particularly interested in the research conducted by Dr. Smith in computer vision...',
-    relevance: 0.78,
-    link: '/sop'
-  }
-]
+// Cache for SOP data
+let sopDataCache: any[] = []
 
 // Get localStorage key for current user
 const getStorageKey = (): string => {
@@ -306,47 +235,6 @@ const sendMessage = async (isRetry: boolean = false, retryQuery?: string) => {
   // Don't allow new messages while loading (unless it's a retry)
   if (!isRetry && isLoading.value) return
   
-<<<<<<< HEAD
-  const userMessage: Message = {
-    id: Date.now().toString(),
-    role: 'user',
-    content: inputText.value,
-    timestamp: new Date()
-  }
-  
-  messages.value.push(userMessage)
-  const currentInput = inputText.value
-  inputText.value = ''
-  isLoading.value = true
-  
-  // Scroll to show user message
-  scrollToBottom()
-  
-  // Simulate AI processing
-  setTimeout(() => {
-    // Mock response based on input
-    let response = ''
-    let results: SearchResult[] = []
-    let references: SOPReference[] = []
-    
-    const lowerInput = currentInput.toLowerCase()
-    
-    if (lowerInput.includes('professor') || lowerInput.includes('researcher') || lowerInput.includes('advisor')) {
-      response = 'I found some professors that match your interests:'
-      results = mockProfessors
-      references = mockSOPReferences.filter(ref => ref.title.includes('Research'))
-    } else if (lowerInput.includes('school') || lowerInput.includes('program') || lowerInput.includes('university')) {
-      response = 'Here are some programs that might interest you:'
-      results = mockSchools
-      references = mockSOPReferences.filter(ref => ref.title.includes('Program'))
-    } else {
-      response = 'I found some relevant results for your query:'
-      results = [...mockProfessors.slice(0, 1), ...mockSchools.slice(0, 1)]
-      references = mockSOPReferences
-    }
-    
-    const assistantMessageId = (Date.now() + 1).toString()
-=======
   // Check for API key
   if (!import.meta.env.VITE_OPENAI_API_KEY) {
     alert('OpenAI API key is not configured. Please set VITE_OPENAI_API_KEY in your .env file.')
@@ -365,14 +253,6 @@ const sendMessage = async (isRetry: boolean = false, retryQuery?: string) => {
     // Use push to ensure reactivity (Vue tracks array mutations)
     messages.value.push(userMessage)
     inputText.value = ''
-    
-    // Debug: log to verify message was added
-    console.log('User message added:', {
-      message: userMessage,
-      totalMessages: messages.value.length,
-      userMessageCount: messages.value.filter(m => m.role === 'user').length,
-      allMessages: messages.value.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 20) }))
-    })
     
     // Force save immediately to prevent loss
     if (isInitialized.value) {
@@ -512,32 +392,38 @@ const sendMessage = async (isRetry: boolean = false, retryQuery?: string) => {
     
     // 5. Create assistant message
     const assistantMessageId = `assistant-${Date.now()}`
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
     const assistantMessage: Message = {
       id: assistantMessageId,
       role: 'assistant',
-      content: response,
+      content: result.answer,
       timestamp: new Date(),
-      searchResults: results.length > 0 ? results : undefined,
-      sopReferences: references.length > 0 ? references : undefined
+      searchResults: allSearchResults.length > 0 ? allSearchResults : undefined,
+      sopReferences: sopReferences.length > 0 ? sopReferences : undefined
     }
     
     messages.value.push(assistantMessage)
     isLoading.value = false
     
-<<<<<<< HEAD
-    // Start typing effect
-    typeMessage(assistantMessageId, response, () => {
-      // Typing complete, ensure full content is displayed
-      typingMessages.value[assistantMessageId] = response
-=======
-    
     // 6. Start typing effect
     typeMessage(assistantMessageId, result.answer, () => {
       typingMessages.value[assistantMessageId] = result.answer
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
     })
-  }, 1000)
+  } catch (error: any) {
+    console.error('Search error:', error)
+    isLoading.value = false
+    
+    const errorMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: 'assistant',
+      content: error.message?.includes('API key') 
+        ? 'Please configure your OpenAI API key in the .env file (VITE_OPENAI_API_KEY).'
+        : 'Sorry, I encountered an error processing your query. Please try again.',
+      timestamp: new Date()
+    }
+    
+    messages.value.push(errorMessage)
+    typeMessage(errorMessage.id, errorMessage.content)
+  }
 }
 
 const createApplicationFromResult = (result: SearchResult) => {
@@ -572,20 +458,12 @@ const formatTime = (date: Date) => {
   })
 }
 
-onMounted(() => {
+onMounted(async () => {
   if (!auth.user) {
     router.push('/')
     return
   }
   
-<<<<<<< HEAD
-  // Add welcome message with typing effect
-  const welcomeMessage: Message = {
-    id: '0',
-    role: 'assistant',
-    content: 'Hello! I can help you search for professors, programs, and find relevant sections in your SOP. What would you like to search for?',
-    timestamp: new Date()
-=======
   // Load SOP data in background
   try {
     sopDataCache = await loadSOPData()
@@ -603,11 +481,6 @@ onMounted(() => {
   if (savedMessages.length > 0) {
     // Restore saved messages - use direct assignment to avoid triggering watch prematurely
     messages.value = savedMessages
-    console.log('Restored messages from localStorage:', {
-      count: savedMessages.length,
-      userMessages: savedMessages.filter(m => m.role === 'user').length,
-      allMessages: savedMessages.map(m => ({ id: m.id, role: m.role, content: m.content.substring(0, 30) }))
-    })
     // Restore typing effects for all assistant messages (show full content immediately)
     savedMessages.forEach(msg => {
       if (msg.role === 'assistant' && msg.content) {
@@ -627,7 +500,6 @@ onMounted(() => {
     setTimeout(() => {
       typeMessage('0', welcomeMessage.content)
     }, 300)
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
   }
   
   // Wait for Vue to update DOM, then mark as initialized
@@ -640,109 +512,18 @@ onMounted(() => {
   // Mark initialization as complete AFTER messages are set and DOM is updated
   isInitializing = false
   isInitialized.value = true
-  console.log('Initialization complete, watch enabled. Current messages:', {
-    total: messages.value.length,
-    userMessages: messages.value.filter(m => m.role === 'user').length,
-    allMessages: messages.value.map(m => ({ id: m.id, role: m.role }))
-  })
 })
 </script>
 
 <template>
-<<<<<<< HEAD
-  <div class="layout">
-    <main class="main-content">
-      <div class="chat-container">
-        <div class="chat-header">
-          <h1>AI Assisted Search</h1>
-          <p class="subtitle">Search for professors, programs, and get AI-powered recommendations</p>
-        </div>
-        
-        <div class="messages-container" ref="messagesContainer">
-          <div 
-            v-for="message in messages" 
-            :key="message.id"
-            :class="['message', message.role]"
-          >
-            <div class="message-avatar">
-              <span v-if="message.role === 'user'">👤</span>
-              <span v-else>🤖</span>
-            </div>
-            <div class="message-content">
-              <div class="message-text">
-                <span v-if="message.role === 'assistant' && typingMessages[message.id] !== undefined">
-                  {{ typingMessages[message.id] || '' }}
-                  <span v-if="typingMessages[message.id] !== message.content" class="typing-cursor">|</span>
-                </span>
-                <span v-else>{{ message.content }}</span>
-              </div>
-              
-              <!-- Search Results in Message -->
-              <div v-if="message.searchResults && message.searchResults.length > 0" class="message-results">
-                <h3 class="results-title-inline">Search Results</h3>
-                <div class="results-grid-inline">
-                  <div 
-                    v-for="result in message.searchResults" 
-                    :key="result.id"
-                    class="result-card-inline"
-                    @click="createApplicationFromResult(result)"
-                  >
-                    <div class="result-header">
-                      <span class="result-type">{{ result.type === 'professor' ? '👨‍🏫' : '🏫' }}</span>
-                      <span class="result-relevance">{{ Math.round(result.relevance * 100) }}% match</span>
-                    </div>
-                    <h3 class="result-name">{{ result.name }}</h3>
-                    <p class="result-details">{{ result.details }}</p>
-                    <div v-if="result.metadata" class="result-metadata">
-                      <div v-if="result.metadata.university" class="metadata-item">
-                        <strong>University:</strong> {{ result.metadata.university }}
-                      </div>
-                      <div v-if="result.metadata.department" class="metadata-item">
-                        <strong>Department:</strong> {{ result.metadata.department }}
-                      </div>
-                      <div v-if="result.metadata.researchAreas" class="metadata-item">
-                        <strong>Research Areas:</strong> {{ result.metadata.researchAreas.join(', ') }}
-                      </div>
-                      <div v-if="result.metadata.email" class="metadata-item">
-                        <strong>Email:</strong> {{ result.metadata.email }}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- SOP References in Message -->
-              <div v-if="message.sopReferences && message.sopReferences.length > 0" class="message-sop">
-                <h3 class="results-title-inline">Relevant SOP Sections</h3>
-                <div class="sop-list-inline">
-                  <div 
-                    v-for="sop in message.sopReferences" 
-                    :key="sop.id"
-                    class="sop-card-inline"
-                    @click="viewSOPReference(sop)"
-                  >
-                    <div class="sop-header">
-                      <h4 class="sop-title">{{ sop.title }}</h4>
-                      <span class="sop-relevance">{{ Math.round(sop.relevance * 100) }}% relevant</span>
-                    </div>
-                    <p class="sop-excerpt">{{ sop.excerpt }}</p>
-                    <button class="sop-link-btn">View in SOP →</button>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="message-time">{{ formatTime(message.timestamp) }}</div>
-            </div>
-=======
   <div class="flex h-screen bg-background overflow-hidden">
     <Sidebar />
     <main class="flex-1 flex flex-col overflow-hidden transition-all duration-300 ease-in-out">
       <div class="flex-1 overflow-y-auto min-h-0" ref="messagesContainer">
-        <div class="max-w-6xl mx-auto w-full p-6">
+        <div class="max-w-4xl lg:max-w-6xl mx-auto w-full p-4 md:p-6">
           <div class="mb-6">
             <h1 class="text-3xl font-bold mb-2">Intelligent Search</h1>
             <p class="text-muted-foreground">Search for professors, applications, and get personalized recommendations</p>
->>>>>>> 1878c60 (Enhance SOP view and intelligent search, remove documentation)
           </div>
           
           <div class="space-y-4">
