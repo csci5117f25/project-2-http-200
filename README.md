@@ -5,8 +5,8 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 ## App Info:
 
 * Team Name: http-200
-* App Name: PhDHub
-* App Link: <https://TODO.com/>
+* App Name: PhD App Hub
+* App Link: <https://phd-app-hub-4df7c.web.app>
 
 ### Students
 * Leon Chen, chen9861@umn.edu
@@ -18,21 +18,24 @@ CSCI 5117, Fall 2025, [assignment description](https://canvas.umn.edu/courses/51
 **Describe the most challenging features you implemented
 (one sentence per bullet, maximum 4 bullets):**
 
-* ...
+* **Dashboard, Real-Time Application Management**: Built a responsive dashboard with dynamic filtering by school and subfield, color-coded tags for visual organization, and real-time data synchronization using Firebase Firestore, allowing students to track and manage their entire PhD application portfolio with instant updates across devices.
+
+* **Intelligent Search, AI-Powered Discovery**: Implemented a natural language search system using OpenAI API with multi-path recall that simultaneously searches through CSRankings professor data and SOP reference library, providing contextual recommendations for professors, programs, and writing examples, with seamless navigation to related SOP references.
+
+* **SOP Center, Split-Screen Writing Environment**: Created a resizable dual-panel interface combining a searchable SOP reference library with PDF preview (using PDF.js) on the left, and a full-featured Markdown editor with live preview (Typora-like experience) on the right, featuring auto-save to localStorage and export functionality.
+
+* **Recommendations, Automated Letter Management**: Developed a recommendation letter tracking system integrated with Firebase Cloud Functions that automatically generates and sends invitation emails to professors, tracks submission status across multiple schools, and manages letter assignments with reminder notifications.
 
 Which (if any) device integration(s) does your app support?
 
-* ...
+None, The app is designed for desktop use only and is optimized for desktop browsers (1920x1080 or larger screens).
 
 Which (if any) progressive web app feature(s) does your app support?
 
-* ...
-
+None, The app does not implement Progressive Web App (PWA) features.
 
 
 ## Mockup images
-
-**[Add images/photos that show your mockup](https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository) along with a very brief caption:**
 
 ### Overall Design Mockup
 <img src="Mock-ups/Mockup.png" alt="Overall Mockup" width="800"/>
@@ -114,17 +117,35 @@ Left the structure as-is since this part was already clear
 
 **Is there anything special we need to know in order to effectively test your app? (optional):**
 
-* ...
+* **Initial Loading**: The app may take a few seconds to load data on first visit (professors, SOP examples, stipend rankings). This is normal behavior.
+
+* **PDF Preview Limitations**: Some SOP reference PDFs may fail to load due to external link availability (Google Drive, GitHub, Overleaf). This is expected behavior as the dataset contains links from various sources that may change over time.
+
+* **Email Functionality**: The recommendation letter email sending feature may not be available if backend services are not configured, but all other recommendation tracking features will work normally.
+
+* **Browser Compatibility**: The app is optimized for modern browsers (Chrome, Firefox, Safari, Edge). PDF preview may have limited support in older browsers.
+
+* **Desktop-Only Design**: The app is designed for desktop use only. For best testing experience, test on desktop browsers with screen resolution of 1920x1080 or larger. The SOP split-screen editor and other features are optimized for desktop viewports.
 
 
 
-## Screenshots of Site (complete)
+## Screenshots of Site
 
-**[Add a screenshot of each key page](https://stackoverflow.com/questions/10189356/how-to-add-screenshot-to-readmes-in-github-repository)
-along with a very brief caption:**
+### Dashboard, Application Management
+<img src="ScreenShot/image1.png" alt="Dashboard" width="800"/>
+*Main dashboard showing all PhD applications with filtering capabilities by school and subfield. Users can create new applications, view application status, and manage their application portfolio. The interface features color-coded tags for schools and research areas, making it easy to visually organize and filter applications.*
 
-![](https://media.giphy.com/media/o0vwzuFwCGAFO/giphy.gif)
+### Intelligent Search, AI-Powered Discovery
+<img src="ScreenShot/image2.png" alt="AI Search" width="800"/>
+*Intelligent search interface powered by OpenAI API. Users can ask natural language questions to find professors, programs, and relevant SOP examples. The system performs multi-path recall across CSRankings professor data and SOP reference library, providing contextual recommendations. Search results include clickable cards that can directly navigate to related SOP references or create new application entries.*
 
+### SOP Center, Writing & Reference
+<img src="ScreenShot/image3.png" alt="SOP Editor" width="800"/>
+*Split-screen SOP writing interface. Left panel displays the SOP Reference Library with searchable examples from successful PhD applicants, including PDF previews. Right panel features a full-featured Markdown editor with live preview mode (Typora-like experience). Users can resize the panels, search for specific SOP examples, view PDF references, and export their work as Markdown files. The editor auto-saves content to localStorage for persistence.*
+
+### Recommendation Letter Management
+<img src="ScreenShot/image4.png" alt="Recommendation Letters" width="800"/>
+*Comprehensive recommendation letter tracking system. Users can add recommenders, assign them to specific schools/programs, and manage invitation emails. The system integrates with Firebase Cloud Functions to send automated email invitations. All recommendation letter tasks are tracked with status indicators, ensuring users never miss a deadline. The interface shows recommender details, assigned schools, and task completion status.*
 
 
 ## Technology Stack & References
@@ -189,8 +210,6 @@ Please do not document required libraries (e.g., VUE, Firebase, vuefire).**
 
 * [OpenAI API](https://platform.openai.com/docs) - Third-party service used for intelligent search functionality. The application uses OpenAI's API to help users find relevant professors, programs, and SOP examples based on natural language queries. User queries are processed and matched against CSRankings professor data and SOP examples to provide recommendations.
 
-**If there's anything else you would like to disclose about how your project
-relied on external code, expertise, or anything else, please disclose that
-here:**
+* [CSStipendRankings](https://csstipendrankings.org/) - Open-source platform providing CS PhD stipend rankings and data. The application loads stipend data from CSV files (based on CSStipendRankings dataset) to display PhD funding rankings, including stipends, living costs, fees, and net income calculations. This data is used in the Stipend Rankings feature to help users compare funding across different CS PhD programs. GitHub repository: [CSStipendRankings/CSStipendRankings](https://github.com/CSStipendRankings/CSStipendRankings)
 
-...
+* [Firebase Trigger Email Extension](https://firebase.google.com/products/extensions/firestore-send-email) - Firebase extension used for sending email notifications. The application uses this extension to send recommendation letter invitation emails and task reminder emails. Emails are queued in Firestore's `mail` collection, and the extension automatically processes and sends them.
