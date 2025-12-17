@@ -896,6 +896,7 @@ watch(editorContent, (newContent, oldContent) => {
                   <div>
                     <h2 class="text-2xl font-bold mb-2">SOP Reference Library</h2>
                     <p class="text-sm text-muted-foreground">Browse example SOPs from successful PhD applicants</p>
+                    <p class="text-xs text-muted-foreground mt-2">Note: Some links may be unavailable for online preview or may be invalid due to dataset timeliness issues</p>
                   </div>
                   
                   <!-- Search Input -->
@@ -1072,15 +1073,16 @@ watch(editorContent, (newContent, oldContent) => {
           <div class="flex-1 overflow-hidden px-4 pb-4">
             <Card class="h-full flex flex-col overflow-hidden">
               <!-- Preview Mode: Use MdPreview for pure preview -->
-              <MdPreview
-                v-if="editorMode === 'preview'"
-                :modelValue="editorContent"
-                :theme="editorTheme"
-                previewTheme="github"
-                codeTheme="github"
-                class="h-full overflow-y-auto"
-                style="height: 100%;"
-              />
+              <div v-if="editorMode === 'preview'" class="flex-1 overflow-y-auto sop-preview-scrollable">
+                <MdPreview
+                  :modelValue="editorContent"
+                  :theme="editorTheme"
+                  previewTheme="github"
+                  codeTheme="github"
+                  class="h-full"
+                  style="min-height: 100%;"
+                />
+              </div>
               <!-- Edit Mode: Use MdEditor for editing -->
               <MdEditor
                 v-else
@@ -1177,6 +1179,36 @@ You can use Markdown formatting:
   max-width: 800px;
   margin: 0 auto;
   line-height: 1.8;
+  min-height: 100%;
+}
+
+/* Preview mode scrollbar styling */
+.sop-preview-scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sop-preview-scrollable::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sop-preview-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sop-preview-scrollable::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.sop-preview-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Firefox scrollbar for preview mode */
+.sop-preview-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
 }
 
 :deep(.md-preview) {

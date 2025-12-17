@@ -94,7 +94,8 @@ const close = () => {
         <label for="name" class="text-sm font-semibold">Name *</label>
         <Input
           id="name"
-          v-model="name"
+          :value="name"
+          @update:value="(val: string) => name = val"
           placeholder="Professor's full name"
           :disabled="loading"
         />
@@ -104,7 +105,8 @@ const close = () => {
         <label for="email" class="text-sm font-semibold">Email *</label>
         <Input
           id="email"
-          v-model="email"
+          :value="email"
+          @update:value="(val: string) => email = val"
           type="email"
           placeholder="professor@university.edu"
           :disabled="loading"
@@ -115,7 +117,8 @@ const close = () => {
         <label for="affiliation" class="text-sm font-semibold">Affiliation</label>
         <Input
           id="affiliation"
-          v-model="affiliation"
+          :value="affiliation"
+          @update:value="(val: string) => affiliation = val"
           placeholder="University/Institution (optional)"
           :disabled="loading"
         />

@@ -62,7 +62,6 @@ export const useRecommenders = defineStore('recommenders', () => {
       })
       return docRef.id
     } catch (error) {
-      console.error('Failed to add recommender:', error)
       throw error
     } finally {
       loading.value = false
@@ -79,7 +78,6 @@ export const useRecommenders = defineStore('recommenders', () => {
         updatedAt: new Date()
       })
     } catch (error) {
-      console.error('Failed to update recommender:', error)
       throw error
     } finally {
       loading.value = false

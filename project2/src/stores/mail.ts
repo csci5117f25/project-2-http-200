@@ -36,7 +36,8 @@ export const useMail = defineStore('mail', () => {
     try {
       loading.value = true
       
-      const invitationUrl = `${window.location.origin}/professor/invite/${tokenId}`
+      const baseUrl = window.location.origin
+      const invitationUrl = `${baseUrl}/professor/invite/${tokenId}`
       
       const schoolsList = schools.map(school => {
         const deadline = school.deadline 
@@ -109,27 +110,13 @@ ${studentName}
         // Don't include 'from' or 'createdAt' - let extension handle these
       }
       
-      // Debug: Log the recipient email
-      console.log('Sending email to recommender:', to)
-      console.log('Recommender name:', recommenderName)
-      console.log('Student name:', studentName)
-      
       // Add to mail collection - Trigger Email extension will automatically send the email
       const docRef = await addDoc(collection(db, 'mail'), mailTask)
-      
-      console.log('Mail task created:', docRef.id)
-      console.log('Mail task data:', {
-        to: mailTask.to,
-        subject: mailTask.message.subject,
-        hasHtml: !!mailTask.message.html,
-        hasText: !!mailTask.message.text
-      })
       
       // Return the document ID for tracking
       return docRef.id
       
     } catch (error) {
-      console.error('Failed to send invitation email:', error)
       throw error
     } finally {
       loading.value = false

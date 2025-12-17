@@ -28,7 +28,6 @@ export const useAuth = defineStore('auth', () => {
       await signInWithPopup(auth, provider)
       // User state will be updated by onAuthStateChanged
     } catch (error: any) {
-      console.error('Login failed:', error)
       throw error
     } finally {
       loading.value = false

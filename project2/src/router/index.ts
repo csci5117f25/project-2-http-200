@@ -30,6 +30,11 @@ const router = createRouter({
       meta: { requiresAuth: true }
     },
     {
+      path: '/stipend-rankings',
+      component: () => import('../views/StipendRankings.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/professor/invite/:tokenId',
       component: () => import('../views/ProfessorInvite.vue'),
       meta: { public: true }

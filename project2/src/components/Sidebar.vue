@@ -18,8 +18,9 @@ const tools = [
   { label: 'Dashboard', route: '/home', icon: '📊' },
   { label: 'Intelligent Search', route: '/ai-search', icon: '🔍' },
   { label: 'SOP', route: '/sop', icon: '📝' },
-  { label: 'Recommendations', route: '/recommendation', icon: '📧' }
-]
+  { label: 'Recommendations', route: '/recommendation', icon: '📧' },
+  { label: 'Stipend Rankings', route: '/stipend-rankings', icon: '💰' }
+] // Navigation menu items
 
 const isActive = (toolRoute: string) => {
   return route.path === toolRoute || route.path.startsWith(toolRoute + '/')

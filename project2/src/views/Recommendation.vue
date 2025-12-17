@@ -17,7 +17,6 @@ import CardHeader from '../components/ui/card-header.vue'
 import CardTitle from '../components/ui/card-title.vue'
 import CardContent from '../components/ui/card-content.vue'
 import Button from '../components/ui/button.vue'
-import Badge from '../components/ui/badge.vue'
 
 const router = useRouter()
 const auth = useAuth()
@@ -164,20 +163,30 @@ const formatDate = (dateValue: any) => {
   if (!dateValue) return '-'
   
   try {
+    let date: Date
     // Handle Firestore Timestamp
     if (dateValue?.toDate) {
-      return dateValue.toDate().toLocaleDateString()
+      date = dateValue.toDate()
     }
     // Handle Date object
-    if (dateValue instanceof Date) {
-      return dateValue.toLocaleDateString()
+    else if (dateValue instanceof Date) {
+      date = dateValue
     }
     // Handle string or timestamp number
-    const date = new Date(dateValue)
+    else {
+      date = new Date(dateValue)
+    }
+    
     if (isNaN(date.getTime())) {
       return '-'
     }
-    return date.toLocaleDateString()
+    
+    // Format as English month day, year (e.g., "January 15, 2025")
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
   } catch (error) {
     console.error('Error formatting date:', error, dateValue)
     return '-'

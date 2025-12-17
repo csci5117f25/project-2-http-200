@@ -326,12 +326,7 @@ onMounted(() => {
         <Card
           v-for="item in availableItems" 
           :key="item.id"
-          :class="[
-            'p-4 cursor-pointer transition-colors',
-            isItemSelected(item.id) 
-              ? 'border-primary bg-primary/5' 
-              : 'hover:border-primary/50'
-          ]"
+          :class="`p-4 cursor-pointer transition-colors ${isItemSelected(item.id) ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}`"
           @click="toggleItem(item.id)"
         >
           <div class="flex items-start gap-3">
@@ -359,12 +354,23 @@ onMounted(() => {
                 </div>
                 <div class="flex flex-col gap-1.5">
                   <label class="text-xs font-semibold">Due Date *</label>
-                  <Input 
-                    type="date"
-                    :value="selectedItems[item.id]?.dueDate || ''"
-                    @update:value="(val) => updateItemInfo(item.id, 'dueDate', val)"
-                    @click.stop
-                  />
+                  <div class="relative">
+                    <Input 
+                      type="date"
+                      :value="selectedItems[item.id]?.dueDate || ''"
+                      @update:value="(val) => updateItemInfo(item.id, 'dueDate', val)"
+                      @click.stop
+                      lang="en-US"
+                      :class="`pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${!selectedItems[item.id]?.dueDate ? 'text-transparent' : ''}`"
+                    />
+                    <span 
+                      v-if="!selectedItems[item.id]?.dueDate" 
+                      class="absolute left-3 text-muted-foreground text-sm"
+                      style="top: 50%; transform: translateY(-50%); pointer-events: none;"
+                    >
+                      yyyy/mm/dd
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

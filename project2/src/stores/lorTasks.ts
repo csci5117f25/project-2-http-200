@@ -65,7 +65,6 @@ export const useLORTasks = defineStore('lorTasks', () => {
       })
       return docRef.id
     } catch (error) {
-      console.error('Failed to add task:', error)
       throw error
     } finally {
       loading.value = false

@@ -22,7 +22,6 @@ const emit = defineEmits(['edit'])
 const projects = useProjects()
 const auth = useAuth()
 const expanded = ref(false)
-const editingTodo = ref<number | null>(null)
 const newTodo = ref({ time: '', task: '', state: 'Pending', frequency: 'Medium' })
 const isInitialized = ref(false) // Flag to prevent saving during initialization
 
@@ -71,17 +70,6 @@ onMounted(() => {
   isInitialized.value = true
 })
 
-const formatDateInput = (value: string) => {
-  const cleaned = value.replace(/\D/g, '')
-  if (cleaned.length <= 2) {
-    return cleaned
-  } else if (cleaned.length <= 4) {
-    return `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`
-  } else {
-    return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`
-  }
-}
-
 // Convert MM/DD/YYYY format to YYYY-MM-DD (for date input)
 const toDateInputFormat = (value: string | undefined): string => {
   if (!value) return ''
@@ -100,11 +88,6 @@ const fromDateInputFormat = (value: string): string => {
     return `${parts[1]}/${parts[2]}/${parts[0]}`
   }
   return ''
-}
-
-const handleDateInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  newTodo.value.time = formatDateInput(target.value)
 }
 
 const handleDatePickerChange = (event: Event) => {
@@ -177,6 +160,21 @@ const deleteTodo = (index: number) => {
   localStorage.setItem('projects', JSON.stringify(projects.projects))
 }
 
+const deleteProject = async () => {
+  if (!props.data?.id) return
+  
+  const confirmed = confirm('Are you sure you want to delete this project? This action cannot be undone.')
+  if (!confirmed) return
+  
+  try {
+    await projects.remove(props.data.id)
+  } catch (error: any) {
+    console.error('Failed to delete project:', error)
+    const errorMessage = error?.message || 'Failed to delete project. Please try again.'
+    alert(errorMessage)
+  }
+}
+
 const updateTodoState = (index: number, newState: string) => {
   if (!props.data.todos) return
   const updatedTodos = [...props.data.todos]
@@ -200,17 +198,37 @@ const updateTodoFrequency = async (index: number, newFrequency: string) => {
       index,
       auth.user.uid,
       todo.time,
-      newFrequency as 'High' | 'Medium' | 'Low'
+      newFrequency as 'High' | 'Medium' | 'Low',
+        auth.user.email || undefined,
+        todo.task
     )
   }
 }
 
-const addNewTodo = () => {
+const addNewTodo = async () => {
   if (!newTodo.value.task.trim()) return
   const updatedTodos = [...(props.data.todos || [])]
+  const newIndex = updatedTodos.length
   updatedTodos.push({ ...newTodo.value })
   projects.update(props.data.id, { ...props.data, todos: updatedTodos })
   localStorage.setItem('projects', JSON.stringify(projects.projects))
+  
+  // Update reminder record for new todo
+  if (newTodo.value.time && newTodo.value.frequency && auth.user?.uid) {
+    const frequency = newTodo.value.frequency
+    if (frequency === 'High' || frequency === 'Medium' || frequency === 'Low') {
+      await updateReminderRecord(
+        props.data.id,
+        newIndex,
+        auth.user.uid,
+        newTodo.value.time,
+        frequency as 'High' | 'Medium' | 'Low',
+        auth.user.email || undefined,
+        newTodo.value.task
+      )
+    }
+  }
+  
   newTodo.value = { time: '', task: '', state: 'Pending', frequency: 'Medium' }
 }
 
@@ -268,7 +286,16 @@ const projectSubfields = computed(() => {
           <Button
             variant="ghost"
             size="icon"
+            class="h-9 w-9 text-destructive hover:text-destructive hover:bg-destructive/10"
+            @click.stop="deleteProject"
+          >
+            🗑️
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             class="h-9 w-9"
+            @click.stop="expanded = !expanded"
           >
             {{ expanded ? '−' : '+' }}
           </Button>
@@ -308,14 +335,22 @@ const projectSubfields = computed(() => {
             :key="i"
             class="grid grid-cols-[150px_1fr_110px_110px_50px] gap-3 p-3 border-t text-sm items-center"
           >
-            <div>
+            <div class="relative">
               <input
                 type="date"
                 :value="toDateInputFormat(todo.time)"
                 @change="handleExistingTodoDateChange(i, $event)"
                 @input="handleExistingTodoDateChange(i, $event)"
-                class="h-8 text-xs border border-input rounded-md px-2 bg-background text-foreground w-full"
+                lang="en-US"
+                :class="`h-8 text-xs border border-input rounded-md px-2 pr-10 bg-background w-full [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${!todo.time ? 'text-transparent' : 'text-foreground'}`"
               />
+              <span 
+                v-if="!todo.time" 
+                class="absolute left-2 text-muted-foreground text-xs"
+                style="top: 50%; transform: translateY(-50%); pointer-events: none;"
+              >
+                yyyy/mm/dd
+              </span>
             </div>
             <div class="truncate">{{ todo.task }}</div>
             <div class="relative flex items-center">
@@ -374,13 +409,23 @@ const projectSubfields = computed(() => {
         
         <!-- Add Todo Form -->
         <div class="grid grid-cols-[150px_1fr_110px_110px_50px] gap-3 p-3 border rounded-lg bg-muted/30">
-          <input
-            type="date"
-            :value="toDateInputFormat(newTodo.time)"
-            @change="handleDatePickerChange"
-            @input="handleDatePickerChange"
-            class="h-8 text-xs border border-input rounded-md px-2 bg-background text-foreground"
-          />
+          <div class="relative">
+            <input
+              type="date"
+              :value="toDateInputFormat(newTodo.time)"
+              @change="handleDatePickerChange"
+              @input="handleDatePickerChange"
+              lang="en-US"
+              :class="`h-8 text-xs border border-input rounded-md px-2 pr-10 bg-background w-full [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${!newTodo.time ? 'text-transparent' : 'text-foreground'}`"
+            />
+            <span 
+              v-if="!newTodo.time" 
+              class="absolute left-2 text-muted-foreground text-xs"
+              style="top: 50%; transform: translateY(-50%); pointer-events: none;"
+            >
+              yyyy/mm/dd
+            </span>
+          </div>
           <Input
             :value="newTodo.task"
             @update:value="(val: string) => newTodo.task = val"

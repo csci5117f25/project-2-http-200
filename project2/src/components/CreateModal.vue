@@ -188,11 +188,36 @@ const save = async () => {
   }
   
   try {
+    let projectId: string
     if (props.editData?.id) {
-      await projects.update(props.editData.id, projectData)
+      projectId = props.editData.id
+      await projects.update(projectId, projectData)
     } else {
-      await projects.add(projectData)
+      projectId = await projects.add(projectData)
     }
+    
+    // Update reminder records for all todos
+    if (projectId && auth.user?.uid) {
+      const filteredTodos = todos.value.filter(t => t.task.trim())
+      for (let i = 0; i < filteredTodos.length; i++) {
+        const todo = filteredTodos[i]
+        if (todo.time && todo.frequency) {
+          const frequency = todo.frequency
+          if (frequency === 'High' || frequency === 'Medium' || frequency === 'Low') {
+            await updateReminderRecord(
+              projectId,
+              i,
+              auth.user.uid,
+              todo.time,
+              frequency as 'High' | 'Medium' | 'Low',
+              auth.user.email || undefined,
+              todo.task
+            )
+          }
+        }
+      }
+    }
+    
     emit('close')
   } catch (error) {
     console.error('Failed to save application:', error)
@@ -253,7 +278,7 @@ const save = async () => {
               :placeholder="profEnabled ? 'Search professor...' : 'Select school first'"
               :disabled="!profEnabled"
             />
-            <div v-if="profResults.length > 0" class="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-48 overflow-y-auto">
+            <div v-if="profResults.length > 0" class="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-96 overflow-y-auto">
               <div 
                 v-for="p in profResults"
                 :key="p.name"
@@ -368,13 +393,23 @@ const save = async () => {
             :key="i"
             class="grid grid-cols-[150px_1fr_110px_110px_50px] gap-3 p-3 border-t text-sm items-center"
           >
-            <input
-              type="date"
-              :value="toDateInputFormat(todo.time)"
-              @change="handleDatePickerChange(i, $event)"
-              @input="handleDatePickerChange(i, $event)"
-              class="h-8 text-xs border border-input rounded-md px-2 bg-background text-foreground"
-            />
+            <div class="relative">
+              <input
+                type="date"
+                :value="toDateInputFormat(todo.time)"
+                @change="handleDatePickerChange(i, $event)"
+                @input="handleDatePickerChange(i, $event)"
+                lang="en-US"
+                :class="`h-8 text-xs border border-input rounded-md px-2 pr-10 bg-background w-full [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:cursor-pointer ${!todo.time ? 'text-transparent' : 'text-foreground'}`"
+              />
+              <span 
+                v-if="!todo.time" 
+                class="absolute left-2 text-muted-foreground text-xs"
+                style="top: 50%; transform: translateY(-50%); pointer-events: none;"
+              >
+                yyyy/mm/dd
+              </span>
+            </div>
             <Input 
               :value="todo.task" 
               @update:value="(val: string) => todo.task = val" 
@@ -413,7 +448,15 @@ const save = async () => {
                   todo.frequency = val
                   // Update reminder record when frequency changes
                   if (editData?.id && auth.user?.uid && todo.time && (val === 'High' || val === 'Medium' || val === 'Low')) {
-                    await updateReminderRecord(editData.id, i, auth.user.uid, todo.time, val as 'High' | 'Medium' | 'Low')
+                    await updateReminderRecord(
+                      editData.id,
+                      i,
+                      auth.user.uid,
+                      todo.time,
+                      val as 'High' | 'Medium' | 'Low',
+                      auth.user.email || undefined,
+                      todo.task
+                    )
                   }
                 }"
                 class="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
